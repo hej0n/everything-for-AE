@@ -1,0 +1,2452 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>everything for AE</title>
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --card: rgba(255,255,255,0.075);
+    --card-border: rgba(255,255,255,0.12);
+    --text: #ffffff;
+    --muted: #9a9a9a;
+    --green: #4caf50;
+    --shadow: 0 24px 60px rgba(0,0,0,0.55);
+  }
+  * { box-sizing: border-box; }
+  html { scrollbar-gutter: stable both-edges; background: var(--bg); }
+  body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; color:var(--text); background:var(--bg); overflow-x:hidden; min-height:100vh; }
+
+  .bg { position:fixed; inset:0; z-index:-3; background:#07080b; }
+  .bg::before, .bg::after { content:none; }
+
+  @keyframes gradientMove { 0%{background-position:0% 50%, 100% 0%, 0% 100%, 100% 100%, 0% 50%} 50%{background-position:100% 50%, 0% 100%, 100% 0%, 0% 0%, 100% 50%} 100%{background-position:0% 50%, 100% 0%, 0% 100%, 100% 100%, 0% 50%} }
+  @keyframes gradientPan { 0%{filter:hue-rotate(0deg) saturate(110%)} 50%{filter:hue-rotate(10deg) saturate(125%)} 100%{filter:hue-rotate(0deg) saturate(110%)} }
+  @keyframes drift { 0%,100%{transform:translate3d(0,0,0) scale(1)} 50%{transform:translate3d(30px,-18px,0) scale(1.05)} }
+  @keyframes floatGlow { 0%,100%{transform:translate3d(-10px,8px,0) scale(1)} 50%{transform:translate3d(18px,-12px,0) scale(1.08)} }
+
+  .progress { position:fixed; top:0; left:0; width:0%; height:3px; z-index:999;
+    background:linear-gradient(90deg,rgba(255,255,255,.95),rgba(255,255,255,.35));
+    box-shadow:0 0 20px rgba(255,255,255,.18); transition:width .1s linear; }
+
+  .wrap { width:min(1440px,calc(100% - 40px)); margin:0 auto; }
+
+  header { padding:92px 0 28px; text-align:center; }
+
+  .eyebrow { display:inline-flex; align-items:center; gap:10px; padding:8px 14px; border-radius:999px;
+    border:1px solid rgba(255,255,255,.09); background:rgba(255,255,255,.04); color:var(--muted);
+    backdrop-filter:blur(18px); font-size:13px; letter-spacing:.01em; }
+  .eyebrow-dot { width:8px; height:8px; border-radius:999px; background:linear-gradient(180deg,#fff,#9c9c9c); box-shadow:0 0 16px rgba(255,255,255,.35); }
+
+  h1 { margin:18px 0 0; font-size:clamp(42px,6vw,64px); line-height:.98; letter-spacing:-.04em;
+    background:linear-gradient(90deg,#fff,#d7d7d7 55%,#8f8f8f); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+  .subtitle { margin-top:16px; font-size:18px; color:#c7c7c7; }
+  .hero-desc { width:min(720px,100%); margin:18px auto 0; color:var(--muted); line-height:1.7; font-size:16px; }
+
+  .meta-row { display:flex; flex-wrap:wrap; justify-content:center; gap:10px; margin-top:24px; }
+  .chip { padding:10px 14px; border-radius:999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); color:#f0f0f0; font-size:13px; backdrop-filter:blur(18px); }
+  .meta-row .chip strong { color:#fff; }
+
+  .search-panel { margin:30px auto 18px; padding:18px; border-radius:24px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); box-shadow:var(--shadow); backdrop-filter:blur(24px); }
+  .search-label { font-size:14px; color:var(--muted); margin-bottom:10px; }
+  .search-row { display:flex; gap:10px; align-items:center; }
+  .search-row input { flex:1; appearance:none; border:1px solid rgba(255,255,255,.12); outline:none; background:rgba(0,0,0,.35); color:#fff; border-radius:999px; padding:14px 18px; font-size:15px; transition:border-color .2s ease,box-shadow .2s ease; }
+  .search-row input:focus { border-color:rgba(255,255,255,.28); box-shadow:0 0 0 4px rgba(255,255,255,.04); }
+  .search-clear { border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.06); color:#fff; border-radius:999px; padding:14px 16px; cursor:pointer; transition:transform .2s ease,background .2s ease; white-space:nowrap; }
+  .search-clear:hover { transform:translateY(-1px); background:rgba(255,255,255,.1); }
+  button:focus-visible, a:focus-visible, input:focus-visible { outline:2px solid rgba(255,255,255,.7); outline-offset:3px; }
+
+
+  .section { padding:36px 0 14px; }
+  .section h2 { font-size:24px; letter-spacing:-.02em; margin:0 0 14px; }
+  .section-note { color:var(--muted); margin:0 0 20px; line-height:1.65; }
+  .count { color:#fff; font-weight:600; }
+  .result-line { margin-top:12px; color:var(--muted); font-size:13px; }
+
+  .search-results-panel { margin:18px auto 18px; padding:22px; border-radius:28px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.055); box-shadow:var(--shadow); backdrop-filter:blur(24px); position:relative; overflow:hidden; }
+  .search-results-panel::before { content:""; position:absolute; inset:0; background:radial-gradient(circle at 20% 0%,rgba(255,255,255,.08),transparent 28%); pointer-events:none; }
+  .search-results-panel .section-head { margin-bottom:14px; }
+  .search-results-panel .section-head p { max-width:760px; }
+
+  .grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:18px; align-items:stretch; }
+
+  /* CARD */
+  .card { position:relative; overflow:hidden; padding:20px; border-radius:26px; border:1px solid var(--card-border); background:var(--card); backdrop-filter:blur(30px); box-shadow:0 14px 40px rgba(0,0,0,.34); transform:translateY(0) scale(1); transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s cubic-bezier(.2,.8,.2,1),border-color .35s ease,opacity .35s ease; display:flex; flex-direction:column; gap:12px; min-height:100%; }
+  .card:hover { transform:translateY(-8px) scale(1.02); box-shadow:0 22px 52px rgba(0,0,0,.58); border-color:rgba(255,255,255,.18); }
+  .card::before { content:""; position:absolute; inset:0; background:radial-gradient(circle at var(--mx,50%) var(--my,20%),rgba(255,255,255,.15),transparent 55%); opacity:0; transition:opacity .25s ease; pointer-events:none; }
+  .card:hover::before { opacity:1; }
+  .card::after { content:""; position:absolute; inset:0; background:linear-gradient(120deg,transparent,rgba(255,255,255,.12),transparent); transform:translateX(-100%); transition:transform .65s ease; pointer-events:none; mix-blend-mode:screen; }
+  .card:hover::after { transform:translateX(100%); }
+
+  /* Pack banner */
+  .pack-banner { width:100%; aspect-ratio:1 / 1; height:auto; object-fit:contain; object-position:center; padding:10px; border-radius:18px; margin-bottom:2px; display:block; background:#0b0d12; border:1px solid rgba(255,255,255,.08); box-sizing:border-box; }
+
+  .title { font-size:20px; line-height:1.25; letter-spacing:-.02em; margin:0; padding-right:0; flex:1; }
+
+  .free { display:inline-flex; align-items:center; gap:7px; margin-top:12px; margin-bottom:10px; padding:8px 12px; border-radius:999px; background:rgba(76,175,80,.12); border:1px solid rgba(76,175,80,.22); color:#9ef0a3; font-size:13px; }
+  .free::before { content:""; width:7px; height:7px; border-radius:999px; background:var(--green); box-shadow:0 0 12px rgba(76,175,80,.45); }
+  .pack-size { display:inline-flex; align-items:center; gap:7px; margin-top:-2px; margin-bottom:10px; padding:8px 12px; border-radius:999px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1); color:#f1f1f1; font-size:13px; width:max-content; }
+
+  .dl-counter { display:inline-flex; align-items:center; gap:6px; margin-bottom:16px; padding:6px 12px; border-radius:999px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1); color:var(--muted); font-size:12px; }
+  .dl-counter-icon { opacity:.65; font-size:11px; }
+  .dl-counter-num { font-weight:700; color:#e8e8e8; font-variant-numeric:tabular-nums; min-width:10px; }
+  .dl-counter.bumping .dl-counter-num { animation:numPop .42s cubic-bezier(.2,.8,.2,1); }
+  @keyframes numPop { 0%{transform:scale(1)} 40%{transform:scale(1.4);color:#fff} 100%{transform:scale(1)} }
+
+  /* Card action row */
+  .card-actions { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+
+  .btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:12px 18px; border-radius:999px; background:linear-gradient(180deg,#fff,#dcdcdc); color:#000; text-decoration:none; font-weight:600; font-size:14px; transition:transform .25s ease,filter .25s ease,box-shadow .25s ease; box-shadow:0 10px 24px rgba(255,255,255,.06); border:none; cursor:pointer; white-space:nowrap; }
+  .btn:hover { transform:scale(1.06); filter:brightness(1.04); }
+
+  .about-btn { display:inline-flex; align-items:center; gap:7px; padding:12px 16px; border-radius:999px; border:1px solid rgba(255,255,255,.16); background:rgba(255,255,255,.07); color:#e0e0e0; font-size:13px; font-weight:500; cursor:pointer; transition:transform .22s ease,background .22s ease,border-color .22s ease; white-space:nowrap; }
+  .about-btn:hover { transform:translateY(-1px); background:rgba(255,255,255,.12); border-color:rgba(255,255,255,.24); }
+
+  /* Like button */
+  .like-btn { display:inline-flex; align-items:center; gap:6px; padding:12px 14px; border-radius:999px; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.06); color:#bbb; font-size:13px; font-weight:600; cursor:pointer; transition:transform .22s ease,background .22s ease,border-color .22s ease,color .22s ease,box-shadow .22s ease; user-select:none; white-space:nowrap; }
+  .like-btn:hover { transform:translateY(-1px); background:rgba(255,77,109,.12); border-color:rgba(255,77,109,.25); color:#ff7090; }
+  .like-btn.liked { color:#ff4d6d; background:rgba(255,77,109,.14); border-color:rgba(255,77,109,.3); box-shadow:0 0 0 4px rgba(255,77,109,.06); }
+  .like-btn .like-icon { font-size:15px; transition:transform .25s ease; line-height:1; }
+  .like-btn:hover .like-icon { transform:scale(1.2); }
+  .like-btn.liked .like-icon { animation:heartPop .4s cubic-bezier(.2,.8,.2,1); }
+  .like-btn.like-bump .like-count { }
+  @keyframes heartPop { 0%{transform:scale(.7)} 50%{transform:scale(1.35)} 100%{transform:scale(1)} }
+
+  /* MODAL */
+  .modal-overlay { display:none; position:fixed; inset:0; z-index:1000; background:rgba(0,0,0,.72); backdrop-filter:blur(16px); align-items:center; justify-content:center; padding:20px; }
+  .modal-overlay.open { display:flex; animation:modalFadeIn .28s ease forwards; }
+  @keyframes modalFadeIn { from{opacity:0} to{opacity:1} }
+
+  .modal { position:relative; width:min(560px,100%); max-height:85vh; overflow-y:auto; border-radius:28px; border:1px solid rgba(255,255,255,.14); background:rgba(16,16,16,.98); box-shadow:0 40px 100px rgba(0,0,0,.8); padding:32px; animation:modalSlideIn .35s cubic-bezier(.2,.8,.2,1) forwards; scrollbar-width:thin; scrollbar-color:rgba(255,255,255,.15) transparent; }
+  @keyframes modalSlideIn { from{transform:translateY(24px) scale(.97);opacity:0} to{transform:translateY(0) scale(1);opacity:1} }
+
+  .modal-close { position:absolute; top:18px; right:18px; width:36px; height:36px; display:flex; align-items:center; justify-content:center; border-radius:999px; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.07); color:#ccc; font-size:18px; cursor:pointer; transition:background .2s ease,transform .2s ease; line-height:1; }
+  .modal-close:hover { background:rgba(255,255,255,.13); transform:rotate(90deg); }
+
+  .modal-banner { width:100%; aspect-ratio:1 / 1; height:auto; object-fit:contain; object-position:center; border-radius:18px; margin-bottom:22px; display:block; background:#0b0d12; border:1px solid rgba(255,255,255,.08); box-sizing:border-box; padding:10px; }
+  .modal-title { font-size:22px; font-weight:700; letter-spacing:-.02em; margin:0 0 10px; padding-right:40px; }
+
+  .modal-ae-req { display:inline-flex; align-items:center; gap:6px; padding:6px 12px; border-radius:999px; background:rgba(72,90,255,.12); border:1px solid rgba(72,90,255,.22); color:#a0aaff; font-size:12px; margin-bottom:10px; }
+  .modal-size { display:inline-flex; align-items:center; gap:6px; padding:6px 12px; border-radius:999px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1); color:#f1f1f1; font-size:12px; margin-bottom:18px; width:max-content; }
+
+  .modal-section-label { font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin:18px 0 10px; }
+  .modal-tags { display:flex; flex-wrap:wrap; gap:8px; }
+  .modal-tag { padding:7px 12px; border-radius:999px; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.1); color:#e0e0e0; font-size:13px; }
+  .modal-desc { color:#bbb; line-height:1.7; font-size:14px; margin:0; }
+  .modal-dl-btn { margin-top:22px; width:100%; padding:14px; font-size:15px; }
+
+  /* Sections */
+  .info-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; margin-top:18px; }
+  .info-card { padding:18px; border-radius:18px; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.09); backdrop-filter:blur(22px); }
+  .info-card h3 { margin:0 0 8px; font-size:16px; }
+  .info-card p { margin:0; color:var(--muted); line-height:1.6; font-size:14px; }
+
+  .glass { padding:28px; border-radius:24px; border:1px solid rgba(255,255,255,.09); background:rgba(255,255,255,.04); backdrop-filter:blur(24px); margin-bottom:18px; }
+  .install-list { margin:0; padding-left:18px; color:#ededed; line-height:1.75; }
+  .install-list li { margin-bottom:8px; }
+  .install-note { margin-top:16px; color:var(--muted); line-height:1.65; }
+
+  .footer { padding:54px 0 42px; text-align:center; color:#5f5f5f; font-size:13px; }
+
+  .fade { opacity:0; transform:translateY(36px); transition:opacity .8s ease,transform .8s ease; }
+  .fade.show { opacity:1; transform:translateY(0); }
+
+  .empty-state { display:none; padding:28px; border-radius:20px; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08); color:var(--muted); text-align:center; }
+
+  .card.more-hidden { display:none !important; }
+  .show-more-wrap { display:flex; justify-content:center; align-items:center; width:100%; grid-column:1 / -1; margin:22px 0 0; }
+  .show-more-btn {
+    appearance:none; border:none; cursor:pointer;
+    padding:14px 22px; border-radius:999px;
+    background:linear-gradient(180deg,#fff,#dadada);
+    color:#000; font-weight:700; font-size:14px;
+    box-shadow:0 14px 30px rgba(255,255,255,.08);
+    transition:transform .22s ease, filter .22s ease, box-shadow .22s ease;
+  }
+  .show-more-btn:hover { transform:translateY(-1px) scale(1.03); filter:brightness(1.03); }
+
+
+  /* Favorites */
+  .favorites-panel { margin:26px auto 18px; padding:22px; border-radius:28px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.055); box-shadow:var(--shadow); backdrop-filter:blur(24px); position:relative; overflow:hidden; }
+  .favorites-panel::before { content:""; position:absolute; inset:0; background:radial-gradient(circle at 20% 0%,rgba(255,255,255,.08),transparent 28%); pointer-events:none; }
+  .section-head { display:flex; align-items:flex-end; justify-content:space-between; gap:16px; margin-bottom:12px; }
+  .section-head h2 { margin-bottom:0; }
+  .section-head p { margin:0; color:var(--muted); font-size:14px; }
+  .favorites-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; margin-top:14px; }
+  .favorite-card { padding:16px; border-radius:22px; border:1px solid rgba(255,255,255,.09); background:rgba(0,0,0,.22); animation:popIn .35s ease; }
+  .favorite-card .title { font-size:17px; padding-right:0; }
+  .favorite-card .free { margin-top:10px; margin-bottom:8px; }
+  .favorite-card .dl-counter { margin-bottom:12px; }
+  .favorite-actions { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .remove-fav { appearance:none; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.06); color:#fff; border-radius:999px; padding:12px 14px; cursor:pointer; transition:transform .22s ease,background .22s ease; font-size:14px; }
+  .remove-fav:hover { transform:translateY(-1px); background:rgba(255,255,255,.1); }
+
+  .fav-btn { position:absolute; top:18px; right:18px; width:42px; height:42px; display:inline-flex; align-items:center; justify-content:center; border-radius:999px; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.07); color:#d8d8d8; cursor:pointer; font-size:20px; line-height:1; transition:transform .2s ease,background .2s ease,border-color .2s ease,color .2s ease,box-shadow .2s ease; z-index:2; }
+  .fav-btn:hover { transform:scale(1.08); background:rgba(255,255,255,.12); }
+  .fav-btn.is-favorite { color:#ffd54a; background:rgba(255,213,74,.14); border-color:rgba(255,213,74,.28); box-shadow:0 0 0 6px rgba(255,213,74,.06); }
+  .fav-btn.is-favorite span { display:inline-block; animation:starPop .42s ease; }
+  .card.is-favorite { border-color:rgba(255,213,74,.24); box-shadow:0 18px 45px rgba(0,0,0,.38),0 0 0 1px rgba(255,213,74,.06); }
+  .card.fav-pulse { animation:favPulse .5s ease; }
+
+  .empty-favorites { display:none; margin-top:14px; padding:22px; border-radius:18px; border:1px dashed rgba(255,255,255,.14); background:rgba(255,255,255,.04); color:var(--muted); text-align:center; line-height:1.6; }
+
+  .recommendations-panel { margin:26px auto 18px; padding:22px; border-radius:28px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.055); box-shadow:var(--shadow); backdrop-filter:blur(24px); position:relative; overflow:hidden; }
+  .recommendations-panel::before { content:""; position:absolute; inset:0; background:radial-gradient(circle at 20% 0%,rgba(255,255,255,.08),transparent 28%); pointer-events:none; }
+  .recommendations-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; margin-top:14px; }
+  .recommendation-card { padding:16px; border-radius:22px; border:1px solid rgba(255,255,255,.09); background:rgba(0,0,0,.22); animation:popIn .35s ease; display:flex; flex-direction:column; gap:12px; min-height:100%; }
+  .recommendation-thumb { width:100%; aspect-ratio:1 / 1; object-fit:contain; object-position:center; border-radius:18px; display:block; border:1px solid rgba(255,255,255,.08); background:rgba(0,0,0,.32); box-sizing:border-box; padding:10px; }
+  .recommendation-card .title { font-size:17px; padding-right:0; }
+  .recommendation-size { display:inline-flex; align-items:center; gap:6px; padding:7px 10px; border-radius:999px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.08); color:#e4e4e4; font-size:12px; width:max-content; }
+  .recommendation-actions { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:auto; }
+  .card-stats { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+  .card-stats .dl-counter { margin-bottom:0; }
+  .card-stats .like-btn { padding:10px 12px; min-height:42px; }
+  .card-stats .like-count { min-width:18px; }
+  .recommendation-actions .btn, .recommendation-actions .about-btn { padding:10px 14px; font-size:13px; }
+  .recommendation-actions .fav-btn { position:static; width:auto; height:auto; min-width:42px; min-height:42px; padding:10px 12px; }
+
+  @keyframes starPop { 0%{transform:scale(.7) rotate(-20deg)} 45%{transform:scale(1.25) rotate(12deg)} 100%{transform:scale(1) rotate(0deg)} }
+  @keyframes favPulse { 0%{transform:translateY(0) scale(1)} 35%{transform:translateY(-4px) scale(1.02)} 100%{transform:translateY(0) scale(1)} }
+  @keyframes popIn { 0%{opacity:0;transform:translateY(14px) scale(.98)} 100%{opacity:1;transform:translateY(0) scale(1)} }
+
+  @media (max-width:1280px) {
+    .grid, .recommendations-grid, .favorites-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  }
+
+  @media (max-width:860px) {
+    .info-grid,.favorites-grid { grid-template-columns:1fr; }
+    header { padding-top:76px; }
+    .search-row { flex-direction:column; align-items:stretch; }
+    .search-clear { width:100%; }
+    .section-head { flex-direction:column; align-items:flex-start; }
+    .card-actions { gap:6px; }
+    .about-btn,.like-btn { padding:10px 12px; font-size:12px; }
+  }
+
+  @media (max-width:760px) {
+    .grid, .recommendations-grid, .favorites-grid { grid-template-columns:1fr; }
+  }
+
+  /* AUTH NAV */
+  .auth-nav { position:fixed; top:18px; right:24px; z-index:900; display:flex; align-items:center; gap:10px; }
+  .auth-nav-btn { display:inline-flex; align-items:center; gap:7px; padding:9px 16px; border-radius:999px; border:1px solid rgba(255,255,255,.16); background:rgba(255,255,255,.08); color:#e0e0e0; font-size:13px; font-weight:500; cursor:pointer; transition:transform .22s ease,background .22s ease; backdrop-filter:blur(18px); white-space:nowrap; }
+  .auth-nav-btn:hover { transform:translateY(-1px); background:rgba(255,255,255,.14); }
+  .auth-nav-btn.primary { background:linear-gradient(180deg,#fff,#dcdcdc); color:#000; border:none; }
+  .auth-avatar { width:34px; height:34px; border-radius:999px; object-fit:cover; border:2px solid rgba(255,255,255,.2); }
+  .auth-avatar-placeholder { width:34px; height:34px; border-radius:999px; background:linear-gradient(135deg,#5f6cff,#00d2ff); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px; color:#fff; flex-shrink:0; }
+  .auth-user-name { max-width:120px; overflow:hidden; text-overflow:ellipsis; }
+  .auth-dropdown { position:relative; }
+  .auth-dropdown-menu { position:absolute; top:calc(100% + 8px); right:0; min-width:180px; border-radius:18px; border:1px solid rgba(255,255,255,.12); background:rgba(16,16,16,.97); box-shadow:0 24px 60px rgba(0,0,0,.7); padding:8px; display:none; z-index:1001; }
+  .auth-dropdown-menu.open { display:block; animation:modalFadeIn .2s ease; }
+  .auth-dropdown-item { display:flex; align-items:center; gap:9px; padding:10px 12px; border-radius:12px; color:#ccc; font-size:13px; cursor:pointer; transition:background .18s ease; }
+  .auth-dropdown-item:hover { background:rgba(255,255,255,.08); color:#fff; }
+  .auth-dropdown-sep { height:1px; background:rgba(255,255,255,.08); margin:4px 0; }
+
+  /* AUTH MODAL */
+  .auth-modal-overlay { display:none; position:fixed; inset:0; z-index:1100; background:rgba(0,0,0,.75); backdrop-filter:blur(18px); align-items:center; justify-content:center; padding:20px; }
+  .auth-modal-overlay.open { display:flex; animation:modalFadeIn .25s ease forwards; }
+  .auth-modal { position:relative; width:min(420px,100%); border-radius:28px; border:1px solid rgba(255,255,255,.14); background:rgba(14,14,14,.99); box-shadow:0 40px 100px rgba(0,0,0,.85); padding:36px 32px 28px; animation:modalSlideIn .32s cubic-bezier(.2,.8,.2,1); }
+  .auth-modal-close { position:absolute; top:16px; right:16px; width:34px; height:34px; display:flex; align-items:center; justify-content:center; border-radius:999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.06); color:#aaa; font-size:16px; cursor:pointer; transition:background .2s,transform .2s; }
+  .auth-modal-close:hover { background:rgba(255,255,255,.12); transform:rotate(90deg); }
+  .auth-modal-title { font-size:22px; font-weight:700; letter-spacing:-.02em; margin:0 0 6px; }
+  .auth-modal-sub { color:#888; font-size:14px; margin:0 0 24px; }
+  .auth-tabs { display:flex; gap:4px; margin-bottom:22px; background:rgba(255,255,255,.05); border-radius:12px; padding:4px; }
+  .auth-tab { flex:1; padding:9px; border-radius:9px; border:none; background:transparent; color:#888; font-size:13px; font-weight:600; cursor:pointer; transition:background .2s,color .2s; }
+  .auth-tab.active { background:rgba(255,255,255,.12); color:#fff; }
+  .auth-field { margin-bottom:14px; }
+  .auth-field label { display:block; font-size:12px; color:#888; margin-bottom:6px; letter-spacing:.04em; text-transform:uppercase; }
+  .auth-field input { width:100%; box-sizing:border-box; padding:13px 16px; border-radius:14px; border:1px solid rgba(255,255,255,.12); background:rgba(0,0,0,.38); color:#fff; font-size:15px; outline:none; transition:border-color .2s,box-shadow .2s; }
+  .auth-field input:focus { border-color:rgba(255,255,255,.3); box-shadow:0 0 0 4px rgba(255,255,255,.04); }
+  .auth-submit { width:100%; padding:14px; border-radius:999px; border:none; background:linear-gradient(180deg,#fff,#dcdcdc); color:#000; font-size:15px; font-weight:700; cursor:pointer; margin-top:6px; transition:transform .2s,filter .2s; }
+  .auth-submit:hover { transform:scale(1.02); filter:brightness(1.04); }
+  .auth-submit:disabled { opacity:.5; cursor:not-allowed; transform:none; }
+  .auth-divider { display:flex; align-items:center; gap:10px; margin:18px 0; color:#555; font-size:12px; }
+  .auth-divider::before,.auth-divider::after { content:""; flex:1; height:1px; background:rgba(255,255,255,.08); }
+  .auth-google-btn { width:100%; padding:13px; border-radius:999px; border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.06); color:#e0e0e0; font-size:14px; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px; transition:background .2s,transform .2s; }
+  .auth-google-btn:hover { background:rgba(255,255,255,.11); transform:scale(1.01); }
+  .auth-error { margin-top:12px; padding:10px 14px; border-radius:12px; background:rgba(255,60,60,.1); border:1px solid rgba(255,60,60,.2); color:#ff8080; font-size:13px; display:none; }
+  .auth-error.show { display:block; }
+  .auth-success { margin-top:12px; padding:10px 14px; border-radius:12px; background:rgba(76,175,80,.1); border:1px solid rgba(76,175,80,.2); color:#9ef0a3; font-size:13px; display:none; }
+  .auth-success.show { display:block; }
+  .auth-back-link { display:inline-flex; align-items:center; gap:6px; margin-top:14px; color:#888; font-size:13px; cursor:pointer; background:none; border:none; padding:0; transition:color .2s; }
+  .auth-back-link:hover { color:#ccc; }
+
+  /* Email verification banner */
+  .verify-banner { display:none; position:fixed; bottom:24px; left:50%; transform:translateX(-50%); z-index:800; width:min(480px,calc(100% - 32px)); padding:14px 20px; border-radius:18px; border:1px solid rgba(255,213,74,.25); background:rgba(20,18,8,.97); box-shadow:0 16px 48px rgba(0,0,0,.7); backdrop-filter:blur(18px); animation:modalSlideIn .35s ease; }
+  .verify-banner.show { display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+  .verify-banner-text { flex:1; font-size:13px; color:#e8e8e8; line-height:1.5; min-width:180px; }
+  .verify-banner-text strong { color:#ffd54a; }
+  .verify-banner-actions { display:flex; gap:8px; flex-shrink:0; }
+  .verify-resend-btn { padding:8px 14px; border-radius:999px; border:1px solid rgba(255,213,74,.3); background:rgba(255,213,74,.1); color:#ffd54a; font-size:12px; font-weight:600; cursor:pointer; transition:background .2s; white-space:nowrap; }
+  .verify-resend-btn:hover { background:rgba(255,213,74,.2); }
+  .verify-close-btn { width:28px; height:28px; border-radius:999px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); color:#888; font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background .2s; flex-shrink:0; }
+  .verify-close-btn:hover { background:rgba(255,255,255,.1); }
+
+  /* Updated card layout with real pack photos */
+  .card { display:flex; flex-direction:column; gap:14px; }
+  .pack-banner { width:100%; aspect-ratio:1 / 1; height:auto; object-fit:contain; object-position:center; border-radius:18px; margin-bottom:0; display:block; background:rgba(0,0,0,.30); border:1px solid rgba(255,255,255,.08); box-sizing:border-box; padding:10px; }
+  .card-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+  .fav-btn { position:static; width:auto; height:auto; min-width:42px; min-height:42px; padding:10px 12px; align-self:flex-start; }
+  .card-actions { margin-top:auto; }
+  .favorite-card { display:flex; flex-direction:column; gap:12px; }
+  .favorite-thumb { width:100%; aspect-ratio:1 / 1; object-fit:contain; object-position:center; border-radius:18px; display:block; border:1px solid rgba(255,255,255,.08); background:rgba(0,0,0,.32); box-sizing:border-box; padding:10px; }
+  .favorite-card .title { font-size:20px; }
+  .favorite-card .fav-btn { display:none; }
+
+  .page-view { display:block; }
+  .page-hidden { display:none !important; }
+  .home-hero { padding-top:92px; }
+  .home-actions { display:flex; gap:12px; flex-wrap:wrap; margin-top:22px; }
+  .home-download-btn, .home-secondary-btn { min-width:220px; }
+  .home-telegram-note { color:var(--muted); margin:18px 0 16px; line-height:1.7; }
+  .telegram-cta-card { margin-top:18px; padding:22px; border-radius:28px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.06); box-shadow:var(--shadow); backdrop-filter:blur(24px); position:relative; overflow:hidden; }
+  .telegram-cta-card::before { content:""; position:absolute; inset:0; background:radial-gradient(circle at 18% 0%,rgba(255,255,255,.08),transparent 30%); pointer-events:none; }
+  .telegram-cta-card .telegram-row { display:flex; align-items:center; justify-content:space-between; gap:18px; flex-wrap:wrap; }
+  .telegram-cta-card h3 { margin:0 0 8px; font-size:22px; }
+  .telegram-cta-card p { margin:0; color:var(--muted); line-height:1.65; }
+  .telegram-cta-card .btn { min-width:180px; }
+
+  .bottom-nav {
+    position:fixed;
+    left:50%;
+    bottom:18px;
+    transform:translateX(-50%);
+    z-index:1200;
+    display:flex;
+    gap:8px;
+    padding:10px;
+    border-radius:999px;
+    background:rgba(8,8,8,.72);
+    border:1px solid rgba(255,255,255,.12);
+    box-shadow:0 18px 50px rgba(0,0,0,.5);
+    backdrop-filter:blur(20px);
+  }
+  .bottom-nav-btn {
+    appearance:none;
+    border:none;
+    background:transparent;
+    color:#bcbcbc;
+    font-weight:600;
+    font-size:14px;
+    padding:12px 18px;
+    border-radius:999px;
+    cursor:pointer;
+    transition:background .2s ease,color .2s ease,transform .2s ease;
+  }
+  .bottom-nav-btn:hover { transform:translateY(-1px); color:#fff; }
+  .bottom-nav-btn.active { background:rgba(255,255,255,.12); color:#fff; }
+
+  .versions-grid, .plugin-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .version-card { gap:10px; }
+  .version-badge {
+    display:inline-flex;
+    align-items:center;
+    width:max-content;
+    padding:7px 12px;
+    border-radius:999px;
+    background:rgba(255,255,255,.06);
+    border:1px solid rgba(255,255,255,.1);
+    color:#dcdcdc;
+    font-size:12px;
+  }
+  .version-note { margin:0; color:var(--muted); line-height:1.65; font-size:14px; }
+
+  .plugin-card { gap:10px; }
+  .plugin-desc {
+    margin:0;
+    color:#cfcfcf;
+    line-height:1.65;
+    font-size:14px;
+    display:-webkit-box;
+    -webkit-line-clamp:4;
+    -webkit-box-orient:vertical;
+    overflow:hidden;
+    min-height:92px;
+  }
+  .plugin-card .like-btn {
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    padding:10px 14px;
+    border-radius:999px;
+    border:1px solid rgba(255,255,255,.1);
+    background:rgba(255,255,255,.06);
+    color:#fff;
+    cursor:pointer;
+    font-weight:600;
+    min-width:92px;
+    justify-content:center;
+  }
+  .plugin-card .like-btn:hover { transform:translateY(-1px); background:rgba(255,77,109,.12); border-color:rgba(255,77,109,.25); color:#ff7090; }
+  .plugin-card .like-btn:hover .like-icon { transform:scale(1.2); }
+  .plugin-card .like-btn.liked { color:#ff4d6d !important; background:rgba(255,77,109,.14) !important; border-color:rgba(255,77,109,.3) !important; box-shadow:0 0 0 4px rgba(255,77,109,.06) !important; }
+  .plugin-card .card-stats { margin-top:auto; }
+  .plugin-card .card-actions { margin-top:2px; }
+  .plugin-card .card-head { display:flex; align-items:flex-start; gap:10px; }
+  .plugin-card .title { font-size:18px; }
+
+  @media (max-width: 1280px) {
+    .versions-grid, .plugin-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  }
+  @media (max-width: 760px) {
+    .bottom-nav { width:calc(100% - 24px); justify-content:space-between; }
+    .bottom-nav-btn { flex:1; padding:12px 10px; font-size:13px; }
+    .home-actions { flex-direction:column; }
+    .home-download-btn, .home-secondary-btn { width:100%; min-width:0; }
+    .versions-grid, .plugin-grid { grid-template-columns:1fr; }
+  }
+
+</style>
+</head>
+<body>
+<div class="bg"></div>
+<div class="progress" id="progress"></div>
+
+<!-- AUTH NAV -->
+<nav class="auth-nav" id="authNav">
+  <button class="auth-nav-btn primary" id="authOpenBtn" onclick="openAuthModal()">Войти</button>
+</nav>
+
+<!-- AUTH MODAL -->
+<div class="auth-modal-overlay" id="authModalOverlay">
+  <div class="auth-modal">
+    <button class="auth-modal-close" onclick="closeAuthModal()">✕</button>
+    <div class="auth-modal-title" id="authModalTitle">Добро пожаловать</div>
+    <div class="auth-modal-sub" id="authModalSub">Войди, чтобы скачивать паки и ставить лайки</div>
+    <div class="auth-tabs" id="authTabs">
+      <button class="auth-tab active" id="tabLogin" onclick="switchTab('login')">Вход</button>
+      <button class="auth-tab" id="tabRegister" onclick="switchTab('register')">Регистрация</button>
+    </div>
+    <div id="authFormArea">
+      <div class="auth-field">
+        <label>Email</label>
+        <input type="email" id="authEmail" placeholder="your@email.com" autocomplete="email" />
+      </div>
+      <div class="auth-field" id="authPasswordField">
+        <label>Пароль</label>
+        <input type="password" id="authPassword" placeholder="Минимум 6 символов" autocomplete="current-password" />
+      </div>
+      <div class="auth-field" id="authConfirmField" style="display:none">
+        <label>Подтверди пароль</label>
+        <input type="password" id="authConfirm" placeholder="Повтори пароль" autocomplete="new-password" />
+      </div>
+      <button class="auth-submit" id="authSubmitBtn" onclick="handleEmailAuth()">Войти</button>
+      <button class="auth-back-link" id="forgotLink" onclick="switchTab('forgot')" style="display:none">Забыл пароль?</button>
+      <div class="auth-divider" id="authDivider">или</div>
+      <button class="auth-google-btn" id="authGoogleBtn" onclick="handleGoogleAuth()">
+        <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+        Войти через Google
+      </button>
+    </div>
+    <div class="auth-error" id="authError"></div>
+    <div class="auth-success" id="authSuccess"></div>
+  </div>
+</div>
+
+<!-- Email verification banner -->
+<div class="verify-banner" id="verifyBanner">
+  <div class="verify-banner-text">
+    <strong>Подтверди почту</strong><br>
+    Мы отправили письмо на твой email. Нажми на ссылку в письме. Не видишь письмо? Проверь папку <strong>«Спам»</strong> — скорее всего оно там.
+  </div>
+  <div class="verify-banner-actions">
+    <button class="verify-resend-btn" onclick="resendVerification()">Отправить снова</button>
+    <button class="verify-close-btn" onclick="document.getElementById('verifyBanner').classList.remove('show')">✕</button>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay" role="dialog" aria-modal="true">
+  <div class="modal" id="modalBox">
+    <button class="modal-close" id="modalClose" aria-label="Закрыть">✕</button>
+    <img class="modal-banner" id="modalBanner" src="" alt="" />
+    <div class="modal-title" id="modalTitle"></div>
+    <div class="modal-ae-req" id="modalPlugins"></div>
+    <div class="modal-size" id="modalSize"></div>
+    <div class="modal-section-label">Что включено</div>
+    <div class="modal-tags" id="modalTags"></div>
+    <div class="modal-section-label" id="modalDescLabel">Описание</div>
+    <p class="modal-desc" id="modalDesc"></p>
+    <a class="btn modal-dl-btn" id="modalDlBtn" href="#" target="_blank" rel="noopener">Скачать пак</a>
+  </div>
+</div>
+
+<div id="homePage" class="page-view">
+  <header class="wrap fade home-hero">
+    <div class="eyebrow"><span class="eyebrow-dot"></span> everything for AE • 2026</div>
+    <h1>everything for AE</h1>
+    <div class="subtitle">Лучшие паки и плагины для After Effects</div>
+    <p class="hero-desc">Здесь собраны лучшие плагины и паки для эдитинга в After Effects. Все файлы на сайте безопасны для установки, а скачивание и поиск сделаны так, чтобы нужное находилось в пару кликов.</p>
+    <div class="meta-row">
+      <div class="chip"><span id="totalPacksChip">19</span> паков</div>
+      <div class="chip"><span id="totalPluginsChip">11</span> плагинов</div>
+      <div class="chip">Безопасно для установки</div>
+      <div class="chip">Вход и регистрация сверху</div>
+      <div class="chip">Подписка на Telegram</div>
+    </div>
+  </header>
+
+  <section class="wrap section glass fade home-info-card">
+    <div class="section-head">
+      <div>
+        <h2>О сайте</h2>
+        <p>Удобная база для эдиторов: паки, плагины, версия After Effects и быстрый доступ к нужному.</p>
+      </div>
+      <div class="chip">everything for AE</div>
+    </div>
+    <div class="info-grid">
+      <div class="info-card"><h3>Что внутри</h3><p>Лучшие плагины и паки для эдитинга в After Effects с удобным поиском, избранным и счётчиками.</p></div>
+      <div class="info-card"><h3>Вход и регистрация</h3><p>Кнопка авторизации находится сверху справа, чтобы быстро войти или создать аккаунт.</p></div>
+      <div class="info-card"><h3>Telegram</h3><p>Подпишись на наш Telegram-канал, чтобы не пропустить новые обновления и добавления.</p></div>
+    </div>
+    <div class="telegram-cta-card">
+      <div class="telegram-row">
+        <div>
+          <div class="section-head" style="margin-bottom:10px;align-items:center;">
+            <div>
+              <h2 style="margin-bottom:4px;">Подпишись на наш Telegram-канал</h2>
+              <p style="margin:0;">Отдельная плашка на главной странице для быстрых переходов и новостей.</p>
+            </div>
+          </div>
+        </div>
+        <a class="btn" href="https://t.me/+zDk9Y2d1Cik2MmVi" target="_blank" rel="noopener">Подписаться</a>
+      </div>
+    </div>
+    <div class="home-actions">
+      <a class="btn home-download-btn" href="#versions" onclick="showPage('versionsPage'); return false;">Скачать After Effects</a>
+      <button class="btn home-secondary-btn" type="button" onclick="showPage('packsPage')">Открыть паки</button>
+      <button class="btn home-secondary-btn" type="button" onclick="showPage('pluginsPage')">Открыть плагины</button>
+    </div>
+    <p class="home-telegram-note">Подпишись на наш Telegram-канал — там будут новости, обновления и новые паки.</p>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
+      <button class="btn" type="button" onclick="openAuthModal('login')">Войти</button>
+      <button class="btn" type="button" onclick="openAuthModal('register')">Регистрация</button>
+    </div>
+  </section>
+</div>
+
+<section id="packsPage" class="page-view page-hidden"><main class="wrap">
+  <section class="search-panel fade">
+    <div class="search-label">Поиск по названию или ключевым словам</div>
+    <div class="search-row">
+      <input id="searchInput" type="text" placeholder="Например: przm, text, bundle, beasty..." autocomplete="off" />
+      <button class="search-clear" id="clearBtn" type="button">Очистить</button>
+    </div>
+    <div class="result-line"><span id="searchHint">Всего паков: <span class="count">19</span></span></div>
+  </section>
+
+  <section class="section fade search-results-panel" id="searchResultsSection" style="display:none;">
+    <div class="section-head">
+      <div>
+        <h2>Результаты поиска</h2>
+        <p>Найденные паки появляются здесь, сразу под строкой поиска. Внизу страницы список «Доступные паки» остаётся полным.</p>
+      </div>
+      <div class="chip">Найдено: <strong id="resultCount">0</strong></div>
+    </div>
+    <div class="grid" id="searchResultsGrid"></div>
+    <div class="empty-state" id="emptySearchResults" style="display:none">Ничего не найдено. Попробуй другое слово, например: <b>text</b>, <b>pack</b>, <b>bundle</b>, <b>joshh</b>.</div>
+  </section>
+
+  <section class="section fade recommendations-panel" id="recommendationsSection">
+    <div class="section-head">
+      <div>
+        <h2>Рекомендуем</h2>
+        <p>Лента собирается автоматически: лайки важнее, а скачивания помогают поднять карточку выше.</p>
+      </div>
+      <div class="chip">Живая сортировка</div>
+    </div>
+    <div class="recommendations-grid" id="recommendationsGrid"></div>
+    <div class="empty-state" id="emptyRecommendations" style="display:none">Пока нет данных для рекомендаций.</div>
+  </section>
+
+  <section class="section fade favorites-panel" id="favoritesSection">
+    <div class="section-head">
+      <div><h2>Избранное</h2><p>Паки, которые ты отметил звездочкой.</p></div>
+      <div class="chip">Сохранено в браузере</div>
+    </div>
+    <div class="favorites-grid" id="favoritesGrid"></div>
+    <div class="empty-favorites" id="emptyFavorites">Здесь пока пусто. Нажми на звездочку у любого пака, и он появится в этом разделе.</div>
+  </section>
+
+  <section class="section fade">
+    <h2>Доступные паки</h2>
+    <p class="section-note">Каждый пак отмечен как бесплатный. После второй строки нажми «Ещё», чтобы открыть ещё две строки паков. Нажми «О паке» для подробностей или «Скачать» для загрузки. ♥ — лайки видят все пользователи.</p>
+
+    <div class="grid" id="cards">
+
+      <article class="card fade"
+        data-name="trxzy editing pack best cc&#x27;s, zooms, overlays, sound effects, topaz and handbrake settings, my project files, pannings, effects, twixtors, slide combo, shakes, text pjf"
+        data-download="https://drive.google.com/uc?export=download&amp;id=1bW738z-TQJfpR-1OrUhmgOhgR--puvs_"
+        data-key="trxzy-editing-pack"
+        data-image="./assets/trxzy.jpg"
+        data-items="Best CC&#x27;s,Zooms,Overlays,Sound Effects,Topaz &amp; Handbrake settings,My Project Files,Pannings,Effects,Twixtors,Slide Combo (Normal &amp; Rotation),Shakes,Text PJF,Upload method"
+        data-desc="TRXZY&#x27;s 10K Editing Pack — один из самых насыщенных паков в коллекции. Внутри есть CC, зумы, оверлеи, звуки, проектные файлы, паннинги, эффекты, твиксторы, слайды и шейки."
+        data-plugins="Sapphire, BCC, Deep Glow, Magic Bullet Looks, Deep Glow 2, Twixtor Pro, RSMB">
+        <img class="pack-banner" src="assets/trxzy.jpg" alt="TRXZY Editing Pack" loading="lazy" />
+        <div class="card-head">
+          <h3 class="title">TRXZY Editing Pack</h3>
+          <button class="fav-btn" type="button" aria-label="Добавить в избранное"><span>☆</span></button>
+        </div>
+        <div class="free">Бесплатный пак</div>
+        <div class="dl-counter"><span class="dl-counter-icon">↓</span><span class="dl-counter-num">0</span>&nbsp;скачиваний</div>
+        <div class="card-actions">
+          <a class="btn dl-btn" href="https://drive.google.com/uc?export=download&amp;id=1bW738z-TQJfpR-1OrUhmgOhgR--puvs_" target="_blank" rel="noopener">Скачать</a>
+          <button class="about-btn" type="button">О паке</button>
+          <button class="like-btn" type="button"><span class="like-icon">♥</span><span class="like-count">0</span></button>
+        </div>
+      </article>
+
+      <article class="card fade"
+        data-name="seb aep pack 40 presets total, zooms, slides, shake, effects, pannings, twixtor"
+        data-download="https://drive.google.com/uc?export=download&amp;id=1h_AZ54Zkvtf6DKfwawn3jS_EHlgj92An"
+        data-key="seb-aep-pack"
+        data-image="./assets/seb.jpg"
+        data-items="40 presets total,Zooms,Slides,Shake,Effects,Pannings,Twixtor"
+        data-desc="Компактный пак с 40 пресетами. Здесь есть зумы, слайды, шейки, эффекты, паннинги и твикстор — удобная база для быстрого монтажа.">
+        <img class="pack-banner" src="assets/seb.jpg" alt="SEB_AEP PACK" loading="lazy" />
+        <div class="card-head">
+          <h3 class="title">SEB_AEP PACK</h3>
+          <button class="fav-btn" type="button" aria-label="Добавить в избранное"><span>☆</span></button>
+        </div>
+        <div class="free">Бесплатный пак</div>
+        <div class="dl-counter"><span class="dl-counter-icon">↓</span><span class="dl-counter-num">0</span>&nbsp;скачиваний</div>
+        <div class="card-actions">
+          <a class="btn dl-btn" href="https://drive.google.com/uc?export=download&amp;id=1h_AZ54Zkvtf6DKfwawn3jS_EHlgj92An" target="_blank" rel="noopener">Скачать</a>
+          <button class="about-btn" type="button">О паке</button>
+          <button class="like-btn" type="button"><span class="like-icon">♥</span><span class="like-count">0</span></button>
+        </div>
+      </article>
+
+      <article class="card fade"
+        data-name="ezo editing bundle, my color corrections, slides and slide, my text effects and text, zoom presets, quality guide, handbrake settings, topaz settings, gozalo pjf"
+        data-download="https://drive.google.com/uc?export=download&amp;id=1mcOVHHJ8Q2Ptmhi4bFZJjxM8pFdDvGa7"
+        data-key="ezo-editing-bundle"
+        data-image="./assets/ezo.jpg"
+        data-items="My Color Corrections,Slides And Slide,My Text Effects And Text,Zoom Presets,Quality Guide,Handbrake Settings,Topaz Settings,Gozalo Pjf,Some Random Presets i Use"
+        data-desc="Авторский набор с цветокоррекциями, текстовыми эффектами, зум-пресетами и настройками качества. Внутри есть Gozalo PJF и пресеты, которые автор использует сам."
+        data-plugins="BCC, Sapphire, Magic Bullet Looks, Signal, Deep Glow, deep glow 2, RSMB, Twixtor Pro">
+        <img class="pack-banner" src="assets/ezo.jpg" alt="Ezo&#x27;s Editing Bundle" loading="lazy" />
+        <div class="card-head">
+          <h3 class="title">Ezo&#x27;s Editing Bundle</h3>
+          <button class="fav-btn" type="button" aria-label="Добавить в избранное"><span>☆</span></button>
+        </div>
+        <div class="free">Бесплатный пак</div>
+        <div class="dl-counter"><span class="dl-counter-icon">↓</span><span class="dl-counter-num">0</span>&nbsp;скачиваний</div>
+        <div class="card-actions">
+          <a class="btn dl-btn" href="https://drive.google.com/uc?export=download&amp;id=1mcOVHHJ8Q2Ptmhi4bFZJjxM8pFdDvGa7" target="_blank" rel="noopener">Скачать</a>
+          <button class="about-btn" type="button">О паке</button>
+          <button class="like-btn" type="button"><span class="like-icon">♥</span><span class="like-count">0</span></button>
+        </div>
+      </article>
+
+      <article class="card fade"
+        data-name="envyy s editing pack 8 ccs, 5 project files, zooms, slides, overlays, audios, effects"
+        data-download="https://drive.google.com/uc?export=download&amp;id=1D9nuW5hLUlg0Bhx3vAyfJyodlW9osS4G"
+        data-key="envyy-editing-pack"
+        data-image="./assets/envyy.jpg"
+        data-items="8 cc&#x27;s,5 Project files,Zooms,Slides,20 overlays,12 audios,52 effects"
+        data-desc="Большой пак с 8 CC, 5 проектными файлами, зумами, слайдами, оверлеями, аудио и 52 эффектами — плотный набор для активного эдита."
+        data-plugins="BCC, Sapphire, Magic Bullet Looks, Signal, Deep Glow, Deep Glow 2, RSMB, Twixtor Pro">
+        <img class="pack-banner" src="assets/envyy.jpg" alt="Envyy_s Editing Pack" loading="lazy" />
+        <div class="card-head">
+          <h3 class="title">Envyy_s Editing Pack</h3>
+          <button class="fav-btn" type="button" aria-label="Добавить в избранное"><span>☆</span></button>
+        </div>
+        <div class="free">Бесплатный пак</div>
+        <div class="dl-counter"><span class="dl-counter-icon">↓</span><span class="dl-counter-num">0</span>&nbsp;скачиваний</div>
+        <div class="card-actions">
+          <a class="btn dl-btn" href="https://drive.google.com/uc?export=download&amp;id=1D9nuW5hLUlg0Bhx3vAyfJyodlW9osS4G" target="_blank" rel="noopener">Скачать</a>
+          <button class="about-btn" type="button">О паке</button>
+          <button class="like-btn" type="button"><span class="like-icon">♥</span><span class="like-count">0</span></button>
+        </div>
+      </article>
+
+      <article class="card fade"
+        data-name="legan new editing bundle ccs, topaz and handbrake settings, upload method, quality tutorial, viral method, zooms, twixtors, effects"
+        data-download="https://drive.google.com/uc?export=download&amp;id=1OZtKUmgPoUwgaWN0G4Ibr_tg-5gYKojA"
+        data-key="legan-editing-bundle"
+        data-image="./assets/legan.jpg"
+        data-items="CC&#x27;s,Topaz &amp; Handbrake settings,Upload method,Quality tutorial &amp; Viral method,Zooms,Twixtors,A lot of other effects,PRIVATE channel with all softwares and plugins that i use"
+        data-desc="Набор с CC, настройками качества, upload method, зумами, твиксторами и другими эффектами. Автор также добавляет материалы и софт, которые использует сам."
+        data-plugins="BCC, Sapphire, Magic Bullet Looks, Signal, Deep Glow, RSMB, Twixtor Pro">
+        <img class="pack-banner" src="assets/legan.jpg" alt="Legan&#x27;s New Editing Bundle" loading="lazy" />
+        <div class="card-head">
+          <h3 class="title">Legan&#x27;s New Editing Bundle</h3>
+          <button class="fav-btn" type="button" aria-label="Добавить в избранное"><span>☆</span></button>
+        </div>
+        <div class="free">Бесплатный пак</div>
+        <div class="dl-counter"><span class="dl-counter-icon">↓</span><span class="dl-counter-num">0</span>&nbsp;скачиваний</div>
+        <div class="card-actions">
+          <a class="btn dl-btn" href="https://drive.google.com/uc?export=download&amp;id=1OZtKUmgPoUwgaWN0G4Ibr_tg-5gYKojA" target="_blank" rel="noopener">Скачать</a>
+          <button class="about-btn" type="button">О паке</button>
+          <button class="like-btn" type="button"><span class="like-icon">♥</span><span class="like-count">0</span></button>
+        </div>
+      </article>
+
+      <article class="card fade"
+        data-name="drxpz new editing presets 8 zooms, twixtor settings, color corrections, slides, shakes, text textures, audio settings, render settings"
+        data-download="https://drive.google.com/uc?export=download&amp;id=1LHbcrf1dGvHVxCnHuokIbNICDVRNvh8L"
+        data-key="drxpz-editing-presets"
+        data-image="./assets/drxpz.jpg"
+        data-items="8 zooms,5 Twixtor Settings,5 Color Corrections,4 Slides,3 Shakes,4 Text Textures,2 Audio Settings,Render Settings,Topaz Settings"
+        data-desc="Набор с зумами, Twixtor settings, цветокоррекциями, слайдами, шейками, текстовыми текстурами и настройками рендера и Topaz."
+        data-plugins="Twixtor, BCC, Sapphire, Deep Glow, Magic Bullet Looks, RSMB, Twixtor Pro">
+        <img class="pack-banner" src="assets/drxpz.jpg" alt="Drxpz&#x27;s New Editing Presets" loading="lazy" />
+        <div class="card-head">
+          <h3 class="title">Drxpz&#x27;s New Editing Presets</h3>
+          <button class="fav-btn" type="button" aria-label="Добавить в избранное"><span>☆</span></button>
+        </div>
+        <div class="free">Бесплатный пак</div>
+        <div class="dl-counter"><span class="dl-counter-icon">↓</span><span class="dl-counter-num">0</span>&nbsp;скачиваний</div>
+        <div class="card-actions">
+          <a class="btn dl-btn" href="https://drive.google.com/uc?export=download&amp;id=1LHbcrf1dGvHVxCnHuokIbNICDVRNvh8L" target="_blank" rel="noopener">Скачать</a>
+          <button class="about-btn" type="button">О паке</button>
+          <button class="like-btn" type="button"><span class="like-icon">♥</span><span class="like-count">0</span></button>
+        </div>
+      </article>
+
+      <article class="card fade"
+        data-name="final cut editing pack 4 ccs, 5 project files, zooms, slides, overlays, effects"
+        data-download="https://drive.google.com/uc?export=download&amp;id=1S2Gf0DcQlWutIkSXoO8B9HyLWfKzXI-H"
+        data-key="final-cut-editing-pack"
+        data-image="./assets/final-cut.jpg"
+        data-items="4 cc&#x27;s,5 Project files,zooms,slides,32 overlays,53 effects"
+        data-desc="Плотный пак с CC, проектными файлами, зумами, слайдами, 32 оверлеями и 53 эффектами. Подходит для тех, кому нужен большой набор готовых элементов."
+       >
+        <img class="pack-banner" src="assets/final-cut.jpg" alt="Final Cut Editing Pack" loading="lazy" />
+        <div class="card-head">
+          <h3 class="title">Final Cut Editing Pack</h3>
+          <button class="fav-btn" type="button" aria-label="Добавить в избранное"><span>☆</span></button>
+        </div>
+        <div class="free">Бесплатный пак</div>
+        <div class="dl-counter"><span class="dl-counter-icon">↓</span><span class="dl-counter-num">0</span>&nbsp;скачиваний</div>
+        <div class="card-actions">
+          <a class="btn dl-btn" href="https://drive.google.com/uc?export=download&amp;id=1S2Gf0DcQlWutIkSXoO8B9HyLWfKzXI-H" target="_blank" rel="noopener">Скачать</a>
+          <button class="about-btn" type="button">О паке</button>
+          <button class="like-btn" type="button"><span class="like-icon">♥</span><span class="like-count">0</span></button>
+        </div>
+      </article>
+
+      <article class="card fade"
+        data-name="text animations 23 effects and animations, text fade in and out, text glow and shadow, bend up and down, flux, light sweep, rays, smear"
+        data-download="https://drive.google.com/uc?export=download&amp;id=1yqb9QnRzYRSiV3Adwxok2xQkge5_VUHN"
+        data-key="text-animations-pack"
+        data-image="./assets/text-animations.jpg"
+        data-items="23 effects and animations,Text Fade In &amp; Out,Text Glow &amp; Shadow,Bend Up &amp; Down,Flux,Light Sweep,Rays,Smear"
+        data-desc="23 эффекта и анимации для текста: fade in/out, glow, shadow, bend up/down, flux, light sweep, rays, smear и другие."
+        data-plugins="Deep Glow, BCC and Sapphire">
+        <img class="pack-banner" src="assets/text-animations.jpg" alt="Text Animations" loading="lazy" />
+        <div class="card-head">
+          <h3 class="title">Text Animations</h3>
+          <button class="fav-btn" type="button" aria-label="Добавить в избранное"><span>☆</span></button>
+        </div>
+        <div class="free">Бесплатный пак</div>
+        <div class="dl-counter"><span class="dl-counter-icon">↓</span><span class="dl-counter-num">0</span>&nbsp;скачиваний</div>
+        <div class="card-actions">
+          <a class="btn dl-btn" href="https://drive.google.com/uc?export=download&amp;id=1yqb9QnRzYRSiV3Adwxok2xQkge5_VUHN" target="_blank" rel="noopener">Скачать</a>
+          <button class="about-btn" type="button">О паке</button>
+          <button class="like-btn" type="button"><span class="like-icon">♥</span><span class="like-count">0</span></button>
+        </div>
+      </article>
+
+      <article class="card fade"
+        data-name="ctoan ultimate editing pack 370+ presets, 24kjhon rmk, overlay textures, updated pack"
+        data-download="https://drive.google.com/uc?export=download&amp;id=1zBEmALms0rPJ-F0G177swY5BeZ5jDL5t"
+        data-key="ctoan-ultimate-pack"
+        data-image="./assets/ctoan.jpg"
+        data-items="370+ presets,24kjhon RMK,Overlay textures,Updated pack"
+        data-desc="Один из самых больших паков в коллекции: 370+ пресетов, 24kjhon RMK и overlay textures. Пак регулярно обновляется и содержит много авторских решений."
+        data-plugins="Sapphire, Looks, BCC, Glitchify, Deep Glow, Deep Glow 2, Element 3D, Omino, Universe 4, Bokeh, Magic Bullet">
+        <img class="pack-banner" src="assets/ctoan.jpg" alt="Ctoan Ultimate Editing Pack" loading="lazy" />
+        <div class="card-head">
+          <h3 class="title">Ctoan Ultimate Editing Pack</h3>
+          <button class="fav-btn" type="button" aria-label="Добавить в избранное"><span>☆</span></button>
+        </div>
+        <div class="free">Бесплатный пак</div>
+        <div class="dl-counter"><span class="dl-counter-icon">↓</span><span class="dl-counter-num">0</span>&nbsp;скачиваний</div>
+        <div class="card-actions">
+          <a class="btn dl-btn" href="https://drive.google.com/uc?export=download&amp;id=1zBEmALms0rPJ-F0G177swY5BeZ5jDL5t" target="_blank" rel="noopener">Скачать</a>
+          <button class="about-btn" type="button">О паке</button>
+          <button class="like-btn" type="button"><span class="like-icon">♥</span><span class="like-count">0</span></button>
+        </div>
+      </article>
+
+      <article class="card fade"
+        data-name="joshhs editing pack v3 cc x2, zooms x26, twixtor x4, text and text effects x15, pjfs, effects x30, shakes, slides, quality settings, rotation"
+        data-download="https://drive.google.com/uc?export=download&amp;id=1aYF3izdBMyRBjTqar8jeFcuvvwuIWjTg"
+        data-key="joshh-editing-pack-v3"
+        data-image="./assets/joshh.jpg"
+        data-items="CC x2,Zooms x26,Twixtor x4,Text + Text Effects x15,PJF&#x27;s,Effects x30+,Shakes,Slides,Quality Settings,Rotation"
+        data-desc="Набор с 26 зумами, 4 Twixtor, 15 текстовыми эффектами, PJF-файлами, шейками, слайдами, quality settings и rotation.">
+        <img class="pack-banner" src="assets/joshh.jpg" alt="Joshh&#x27;s Editing Pack V3" loading="lazy" />
+        <div class="card-head">
+          <h3 class="title">Joshh&#x27;s Editing Pack V3</h3>
+          <button class="fav-btn" type="button" aria-label="Добавить в избранное"><span>☆</span></button>
+        </div>
+        <div class="free">Бесплатный пак</div>
+        <div class="dl-counter"><span class="dl-counter-icon">↓</span><span class="dl-counter-num">0</span>&nbsp;скачиваний</div>
+        <div class="card-actions">
+          <a class="btn dl-btn" href="https://drive.google.com/uc?export=download&amp;id=1aYF3izdBMyRBjTqar8jeFcuvvwuIWjTg" target="_blank" rel="noopener">Скачать</a>
+          <button class="about-btn" type="button">О паке</button>
+          <button class="like-btn" type="button"><span class="like-icon">♥</span><span class="like-count">0</span></button>
+        </div>
+      </article>
+
+      <article class="card fade"
+        data-name="przm new editing pack 7 new ccs, teal cc, main cc, light cc, film cc, leone cc, orange haze cc, main grain cc, effects, twixtors, zooms, text settings, topaz settings"
+        data-download="https://drive.google.com/uc?export=download&amp;id=1hmJloN1abuo-qbmWN4EsDweWhk7aClcf"
+        data-key="przms-new-editing-pack"
+        data-image="./assets/przm.jpg"
+        data-items="7 NEW CC&#x27;S,Przm&#x27;s Teal CC,Przm&#x27;s Main CC,Przm&#x27;s Light CC,Przm&#x27;s Film CC,Przm&#x27;s Leone CC,Przm&#x27;s Orange Haze CC,Przm&#x27;s Main Grain CC,26 Effects,3 Twixtor&#x27;s,3 Zooms,12 Text Settings,Multiple Text Effects,Topaz Settings,Improved Topaz Settings,Halftone Settings,Exposure Setting,Comp Settings"
+        data-desc="Свежий пак с 7 CC, 26 эффектами, Twixtor, зумами, текстовыми настройками и дополнительными сеттингами для Topaz и композинга."
+        data-plugins="BCC, Sapphire, Magic Bullet Looks, Deep Glow and Twixtor Pro">
+        <img class="pack-banner" src="assets/przm.jpg" alt="Przm&#x27;s New Editing Pack" loading="lazy" />
+        <div class="card-head">
+          <h3 class="title">Przm&#x27;s New Editing Pack</h3>
+          <button class="fav-btn" type="button" aria-label="Добавить в избранное"><span>☆</span></button>
+        </div>
+        <div class="free">Бесплатный пак</div>
+        <div class="dl-counter"><span class="dl-counter-icon">↓</span><span class="dl-counter-num">0</span>&nbsp;скачиваний</div>
+        <div class="card-actions">
+          <a class="btn dl-btn" href="https://drive.google.com/uc?export=download&amp;id=1hmJloN1abuo-qbmWN4EsDweWhk7aClcf" target="_blank" rel="noopener">Скачать</a>
+          <button class="about-btn" type="button">О паке</button>
+          <button class="like-btn" type="button"><span class="like-icon">♥</span><span class="like-count">0</span></button>
+        </div>
+      </article>
+
+      <article class="card fade"
+        data-name="clovers text pack text textures, text animations, text presets, text glows"
+        data-download="https://drive.google.com/uc?export=download&amp;id=1i65wLLps8mHiwCj3VpZZsVimmCYxEZbh"
+        data-key="clovers-text-pack"
+        data-image="./assets/clovers.jpg"
+        data-items="TEXT TEXTURES,TEXT ANIMATIONS,TEXT PRESETS,3 TEXT GLOWS"
+        data-desc="Текстовый пак с текстурами, анимациями, пресетами и тремя вариантами glow для текста.">
+        <img class="pack-banner" src="assets/clovers.jpg" alt="CLOVERS TEXT PACK" loading="lazy" />
+        <div class="card-head">
+          <h3 class="title">CLOVERS TEXT PACK</h3>
+          <button class="fav-btn" type="button" aria-label="Добавить в избранное"><span>☆</span></button>
+        </div>
+        <div class="free">Бесплатный пак</div>
+        <div class="dl-counter"><span class="dl-counter-icon">↓</span><span class="dl-counter-num">0</span>&nbsp;скачиваний</div>
+        <div class="card-actions">
+          <a class="btn dl-btn" href="https://drive.google.com/uc?export=download&amp;id=1i65wLLps8mHiwCj3VpZZsVimmCYxEZbh" target="_blank" rel="noopener">Скачать</a>
+          <button class="about-btn" type="button">О паке</button>
+          <button class="like-btn" type="button"><span class="like-icon">♥</span><span class="like-count">0</span></button>
+        </div>
+      </article>
+
+      <article class="card fade"
+        data-name="gumis editing pack the whole project file of the video with all the presets, twixtor, text, shakes, blur, ccs, zooms"
+        data-download="https://drive.google.com/uc?export=download&amp;id=15OaN-lqcNKDHngGCrd_HCpUh1IZ0hT4_"
+        data-key="gumis-editing-pack"
+        data-image="./assets/gumis.jpg"
+        data-items="The whole project file of the video with all the presets,All the twixtor/text in the preview video,All the shakes and blur,All the ccs,All the zooms used in the video"
+        data-desc="В паке лежит полный проект видео со всеми пресетами: Twixtor и текст из превью, шейки, blur, CC и все использованные зумы."
+        data-plugins="Sapphire, Twitch, Magic Bullet Looks, BCC">
+        <img class="pack-banner" src="assets/gumis.jpg" alt="GUMIS EDITING PACK" loading="lazy" />
+        <div class="card-head">
+          <h3 class="title">GUMIS EDITING PACK</h3>
+          <button class="fav-btn" type="button" aria-label="Добавить в избранное"><span>☆</span></button>
+        </div>
+        <div class="free">Бесплатный пак</div>
+        <div class="dl-counter"><span class="dl-counter-icon">↓</span><span class="dl-counter-num">0</span>&nbsp;скачиваний</div>
+        <div class="card-actions">
+          <a class="btn dl-btn" href="https://drive.google.com/uc?export=download&amp;id=15OaN-lqcNKDHngGCrd_HCpUh1IZ0hT4_" target="_blank" rel="noopener">Скачать</a>
+          <button class="about-btn" type="button">О паке</button>
+          <button class="like-btn" type="button"><span class="like-icon">♥</span><span class="like-count">0</span></button>
+        </div>
+      </article>
+
+      <article class="card fade"
+        data-name="everything pack 1 unreleased cc, pjfs, diss style presets"
+        data-download="https://drive.google.com/uc?export=download&amp;id=1osG53bFsOpl-WCTSOrigFw6SzAeOnAEP"
+        data-key="everything-pack-1"
+        data-image="./assets/everything-pack.jpg"
+        data-items="unreleased cc,3 pjfs,all my diss style presets"
+        data-desc="Набор с unreleased CC, тремя PJF и всеми diss-style пресетами автора."
+        data-plugins="MBL, BCC, Sapphire, Glitchify">
+        <img class="pack-banner" src="assets/everything-pack.jpg" alt="Everything pack #1" loading="lazy" />
+        <div class="card-head">
+          <h3 class="title">Everything pack #1</h3>
+          <button class="fav-btn" type="button" aria-label="Добавить в избранное"><span>☆</span></button>
+        </div>
+        <div class="free">Бесплатный пак</div>
+        <div class="dl-counter"><span class="dl-counter-icon">↓</span><span class="dl-counter-num">0</span>&nbsp;скачиваний</div>
+        <div class="card-actions">
+          <a class="btn dl-btn" href="https://drive.google.com/uc?export=download&amp;id=1osG53bFsOpl-WCTSOrigFw6SzAeOnAEP" target="_blank" rel="noopener">Скачать</a>
+          <button class="about-btn" type="button">О паке</button>
+          <button class="like-btn" type="button"><span class="like-icon">♥</span><span class="like-count">0</span></button>
+        </div>
+      </article>
+
+      <article class="card fade"
+        data-name="cas new aesthetic pack 6 ccs, 4 twixtors, shakes, zoom presets, effects"
+        data-download="https://drive.google.com/uc?export=download&amp;id=1CZ43huEaEQ-HsLdXPwOcJaH5Xs4YYXIt"
+        data-key="cas-new-aesthetic-pack"
+        data-image="./assets/cas.jpg"
+        data-items="6 CCs,4 Twixtors,3 shakes,4 zoom presets,A full set of effects I regularly use"
+        data-desc="Аesthetic-пак с 6 CC, 4 Twixtor, шейками, зум-пресетами и набором эффектов, которые автор использует регулярно.">
+        <img class="pack-banner" src="assets/cas.jpg" alt="CAS NEW AESTHETIC PACK" loading="lazy" />
+        <div class="card-head">
+          <h3 class="title">CAS NEW AESTHETIC PACK</h3>
+          <button class="fav-btn" type="button" aria-label="Добавить в избранное"><span>☆</span></button>
+        </div>
+        <div class="free">Бесплатный пак</div>
+        <div class="dl-counter"><span class="dl-counter-icon">↓</span><span class="dl-counter-num">0</span>&nbsp;скачиваний</div>
+        <div class="card-actions">
+          <a class="btn dl-btn" href="https://drive.google.com/uc?export=download&amp;id=1CZ43huEaEQ-HsLdXPwOcJaH5Xs4YYXIt" target="_blank" rel="noopener">Скачать</a>
+          <button class="about-btn" type="button">О паке</button>
+          <button class="like-btn" type="button"><span class="like-icon">♥</span><span class="like-count">0</span></button>
+        </div>
+      </article>
+
+      <article class="card fade"
+        data-name="prevail aesthetic pack text settings, twixtor settings, ccs, zooms, shake"
+        data-download="https://drive.google.com/uc?export=download&amp;id=1OnG6rZDPeoWl-yPMudRXT8xwSnODth6b"
+        data-key="prevail-aesthetic-pack"
+        data-image="./assets/prevail.jpg"
+        data-items="2 Text Settings,3 Twixtor Settings,4 CC&#x27;s,2 Zooms,1 Shake"
+        data-desc="Минималистичный пак с текстовыми настройками, Twixtor settings, CC, зумами и одним шейком.">
+        <img class="pack-banner" src="assets/prevail.jpg" alt="Prevail Aesthetic Pack" loading="lazy" />
+        <div class="card-head">
+          <h3 class="title">Prevail Aesthetic Pack</h3>
+          <button class="fav-btn" type="button" aria-label="Добавить в избранное"><span>☆</span></button>
+        </div>
+        <div class="free">Бесплатный пак</div>
+        <div class="dl-counter"><span class="dl-counter-icon">↓</span><span class="dl-counter-num">0</span>&nbsp;скачиваний</div>
+        <div class="card-actions">
+          <a class="btn dl-btn" href="https://drive.google.com/uc?export=download&amp;id=1OnG6rZDPeoWl-yPMudRXT8xwSnODth6b" target="_blank" rel="noopener">Скачать</a>
+          <button class="about-btn" type="button">О паке</button>
+          <button class="like-btn" type="button"><span class="like-icon">♥</span><span class="like-count">0</span></button>
+        </div>
+      </article>
+
+      <article class="card fade"
+        data-name="creed aesthetic pack vol 2 4 ccs, 8 zooms, 6 shakes, 7 twixtors, 2 slides"
+        data-download="https://drive.google.com/uc?export=download&amp;id=1Bgw72WqR77X6NKpH4DeQio_H2qI45RgD"
+        data-key="creed-aesthetic-pack-vol2"
+        data-image="./assets/creed.jpg"
+        data-items="4 cc&#x27;s,8 zooms,6 shakes,7 twixtors,2 slides"
+        data-desc="Пак с 4 CC, 8 зумами, 6 шейками, 7 Twixtor и 2 слайдами — хороший набор для динамичных эдитов."
+        data-plugins="BCC, Sapphire, Twitch, MBL, Twixtor">
+        <img class="pack-banner" src="assets/creed.jpg" alt="Creed Aesthetic Pack Vol.2" loading="lazy" />
+        <div class="card-head">
+          <h3 class="title">Creed Aesthetic Pack Vol.2</h3>
+          <button class="fav-btn" type="button" aria-label="Добавить в избранное"><span>☆</span></button>
+        </div>
+        <div class="free">Бесплатный пак</div>
+        <div class="dl-counter"><span class="dl-counter-icon">↓</span><span class="dl-counter-num">0</span>&nbsp;скачиваний</div>
+        <div class="card-actions">
+          <a class="btn dl-btn" href="https://drive.google.com/uc?export=download&amp;id=1Bgw72WqR77X6NKpH4DeQio_H2qI45RgD" target="_blank" rel="noopener">Скачать</a>
+          <button class="about-btn" type="button">О паке</button>
+          <button class="like-btn" type="button"><span class="like-icon">♥</span><span class="like-count">0</span></button>
+        </div>
+      </article>
+
+      <article class="card fade"
+        data-name="beasty main aura pack main aura cc, zooms, pannings, halftone, flash shake, twixtor, rsmb, omino diffusion, invert settings"
+        data-download="https://drive.google.com/uc?export=download&amp;id=1qLfca42DZDuSyea3Sv0Tdexi7rsR7cUw"
+        data-key="beasty-main-aura-pack"
+        data-image="./assets/beasty.jpg"
+        data-items="My Main Aura CC,All of my new and fav zooms,Pannings,Main Halftone,Main Halftone Shake,Main Flash Shake,Main Twixtor,2 RSMB Settings,Omino Diffusion,Invert Settings"
+        data-desc="Пак с Main Aura CC, зумами, паннингами, halftone, flash shake, Twixtor, RSMB и настройками Omino Diffusion/Invert."
+       >
+        <img class="pack-banner" src="assets/beasty.jpg" alt="BEASTY MAIN AURA PACK" loading="lazy" />
+        <div class="card-head">
+          <h3 class="title">BEASTY MAIN AURA PACK</h3>
+          <button class="fav-btn" type="button" aria-label="Добавить в избранное"><span>☆</span></button>
+        </div>
+        <div class="free">Бесплатный пак</div>
+        <div class="dl-counter"><span class="dl-counter-icon">↓</span><span class="dl-counter-num">0</span>&nbsp;скачиваний</div>
+        <div class="card-actions">
+          <a class="btn dl-btn" href="https://drive.google.com/uc?export=download&amp;id=1qLfca42DZDuSyea3Sv0Tdexi7rsR7cUw" target="_blank" rel="noopener">Скачать</a>
+          <button class="about-btn" type="button">О паке</button>
+          <button class="like-btn" type="button"><span class="like-icon">♥</span><span class="like-count">0</span></button>
+        </div>
+      </article>
+
+      <article class="card fade"
+        data-name="alex ae 2k editing pack rainbow effects, main ccs, watermarks, text effects, turbulant shakes, swass inspired shake, solar flare, slides, zooms, chroma borders, warps, vignette borders"
+        data-download="https://drive.google.com/uc?export=download&amp;id=1ZMNu5w3epCj6XKZe5NshQEFMQv7WouK9"
+        data-key="alex-ae-2k-editing-pack"
+        data-image="./assets/alex.jpg"
+        data-items="Rainbow effects,Main CCs,Watermarks,Text effects,Turbulant Shakes,Swass Inspired Shake,Solar Flare,New Up 1/2 Slides,Zooms,Chroma borders,Warps,Vignette Borders"
+        data-desc="Пак с rainbow effects, основными CC, watermark, текстовыми эффектами, turbulent shakes, slides, zooms, chroma borders, warps и vignette borders."
+        data-plugins="BCC, Sapphire, Twixtor, Magic Bullet Looks, Glitchify, Twitch, Deep Glow">
+        <img class="pack-banner" src="assets/alex.jpg" alt="ALEX AE&#x27;S 2K EDITINIG PACK" loading="lazy" />
+        <div class="card-head">
+          <h3 class="title">ALEX AE&#x27;S 2K EDITINIG PACK</h3>
+          <button class="fav-btn" type="button" aria-label="Добавить в избранное"><span>☆</span></button>
+        </div>
+        <div class="free">Бесплатный пак</div>
+        <div class="dl-counter"><span class="dl-counter-icon">↓</span><span class="dl-counter-num">0</span>&nbsp;скачиваний</div>
+        <div class="card-actions">
+          <a class="btn dl-btn" href="https://drive.google.com/uc?export=download&amp;id=1ZMNu5w3epCj6XKZe5NshQEFMQv7WouK9" target="_blank" rel="noopener">Скачать</a>
+          <button class="about-btn" type="button">О паке</button>
+          <button class="like-btn" type="button"><span class="like-icon">♥</span><span class="like-count">0</span></button>
+        </div>
+      </article>
+
+
+
+    <div class="show-more-wrap" id="showMoreWrap">
+      <button class="show-more-btn" id="showMoreBtn" type="button">Ещё</button>
+    </div>
+
+    <div class="empty-state" id="emptyState">Ничего не найдено. Попробуй другое слово, например: <b>text</b>, <b>pack</b>, <b>bundle</b>, <b>joshh</b>.</div>
+  </section>
+
+  <section class="section fade">
+    <h2>Информация о сайте</h2>
+    <p class="section-note">everything for AE сделан как удобная библиотека для тех, кто работает в After Effects и хочет быстро находить нужные пресеты без лишних переходов.</p>
+    <div class="info-grid">
+      <div class="info-card"><h3>Что здесь собрано</h3><p>Готовые паки пресетов, которые можно скачать в один клик и сразу использовать в монтаже.</p></div>
+      <div class="info-card"><h3>Для кого сайт</h3><p>Для эдиторов, монтажёров и тех, кто хочет ускорить работу в After Effects.</p></div>
+      <div class="info-card"><h3>Обновления</h3><p>Новые паки будут добавляться со временем, чтобы библиотека оставалась полезной и актуальной.</p></div>
+    </div>
+  </section>
+
+  <section class="section glass fade">
+    <h2>Инструкция по установке</h2>
+    <p class="section-note">Установка пака пресетов (.ffx файлов) в After Effects выполняется путём копирования файлов в папку <b>User Presets</b> по пути: <b>Документы\Adobe\After Effects [версия]\User Presets</b>.</p>
+    <ol class="install-list">
+      <li>Скачайте нужный пак кнопкой <b>Скачать</b> под названием пака.</li>
+      <li>Если архив скачался в формате .zip или .rar, распакуйте его в удобную папку.</li>
+      <li>Найдите внутри файлы формата <b>.ffx</b> — это сами пресеты.</li>
+      <li>Скопируйте .ffx файлы в папку <b>Документы\Adobe\After Effects [версия]\User Presets</b>.</li>
+      <li>Запустите или перезапустите After Effects.</li>
+      <li>Откройте панель <b>Effects &amp; Presets</b> и найдите нужные пресеты через поиск или список.</li>
+    </ol>
+    <p class="install-note">Все файлы на сайте отмечены как бесплатные. Новые паки будут добавляться со временем.</p>
+  </section>
+
+  <section class="section glass fade">
+    <h2>Подписка на Telegram</h2>
+    <p class="section-note">Подпишись на наш Telegram канал, чтобы не пропустить новые обновления, свежие паки и будущие добавления на сайт.</p>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
+      <a class="btn" href="https://t.me/+zDk9Y2d1Cik2MmVi">Подписаться</a>
+    </div>
+  </section>
+
+  <div class="footer fade">by hejon © 2026</div>
+</main></section>
+
+<div id="versionsPage" class="page-view page-hidden">
+  <section class="wrap section fade">
+    <div class="section-head">
+      <div>
+        <h2>Версии After Effects</h2>
+        <p>Нажми на нужную версию, чтобы перейти к загрузке. Ссылки взяты из вашего документа.</p>
+      </div>
+      <button class="auth-nav-btn" type="button" onclick="showPage('homePage')">← Назад</button>
+    </div>
+    <div class="grid versions-grid">
+
+      <article class="card version-card fade" data-key="after-effects-2026">
+        <div class="version-badge">Версия</div>
+        <h3 class="title">After Effects 2026</h3>
+        <div class="pack-size">3,4 ГБ</div>
+        <p class="version-note">Скачай нужную версию и используй её как отдельную сборку After Effects.</p>
+        <div class="card-actions">
+          <a class="btn version-dl-btn" href="https://drive.google.com/uc?export=download&amp;id=1vSIBXfhffuejP0h00C5ClSpSclzMD2ML" target="_blank" rel="noopener">Скачать</a>
+        </div>
+      </article>
+    
+      <article class="card version-card fade" data-key="after-effects-2025">
+        <div class="version-badge">Версия</div>
+        <h3 class="title">After Effects 2025</h3>
+        <div class="pack-size">2,4 ГБ</div>
+        <p class="version-note">Скачай нужную версию и используй её как отдельную сборку After Effects.</p>
+        <div class="card-actions">
+          <a class="btn version-dl-btn" href="https://drive.google.com/uc?export=download&amp;id=1jpbvF9OPaKqWrlIA9PwHm-dOvZOM6rKZ" target="_blank" rel="noopener">Скачать</a>
+        </div>
+      </article>
+    
+      <article class="card version-card fade" data-key="after-effects-2024">
+        <div class="version-badge">Версия</div>
+        <h3 class="title">After Effects 2024</h3>
+        <div class="pack-size">2,3 ГБ</div>
+        <p class="version-note">Скачай нужную версию и используй её как отдельную сборку After Effects.</p>
+        <div class="card-actions">
+          <a class="btn version-dl-btn" href="https://drive.google.com/uc?export=download&amp;id=1OpTkBw17lrGgfuoJD2okGv4Ne_FOOutP" target="_blank" rel="noopener">Скачать</a>
+        </div>
+      </article>
+    
+      <article class="card version-card fade" data-key="after-effects-2023">
+        <div class="version-badge">Версия</div>
+        <h3 class="title">After Effects 2023</h3>
+        <div class="pack-size">1,7 ГБ</div>
+        <p class="version-note">Скачай нужную версию и используй её как отдельную сборку After Effects.</p>
+        <div class="card-actions">
+          <a class="btn version-dl-btn" href="https://drive.google.com/uc?export=download&amp;id=1g1RUdnTM5KBV_BQj1fZMRAfYdQA033b8" target="_blank" rel="noopener">Скачать</a>
+        </div>
+      </article>
+    
+      <article class="card version-card fade" data-key="after-effects-2022">
+        <div class="version-badge">Версия</div>
+        <h3 class="title">After Effects 2022</h3>
+        <div class="pack-size">1,6 ГБ</div>
+        <p class="version-note">Скачай нужную версию и используй её как отдельную сборку After Effects.</p>
+        <div class="card-actions">
+          <a class="btn version-dl-btn" href="https://drive.google.com/uc?export=download&amp;id=1RQAMP8MN2QsnwcYlTHLx66nHbcTEo7kf" target="_blank" rel="noopener">Скачать</a>
+        </div>
+      </article>
+    
+      <article class="card version-card fade" data-key="after-effects-2021">
+        <div class="version-badge">Версия</div>
+        <h3 class="title">After Effects 2021</h3>
+        <div class="pack-size">1,2 ГБ</div>
+        <p class="version-note">Скачай нужную версию и используй её как отдельную сборку After Effects.</p>
+        <div class="card-actions">
+          <a class="btn version-dl-btn" href="https://drive.google.com/uc?export=download&amp;id=1mOjZa-06HGvFFMH-3M0jx1x0bZe8PBPC" target="_blank" rel="noopener">Скачать</a>
+        </div>
+      </article>
+    
+      <article class="card version-card fade" data-key="after-effects-2020">
+        <div class="version-badge">Версия</div>
+        <h3 class="title">After Effects 2020</h3>
+        <div class="pack-size">1,1 ГБ</div>
+        <p class="version-note">Скачай нужную версию и используй её как отдельную сборку After Effects.</p>
+        <div class="card-actions">
+          <a class="btn version-dl-btn" href="https://drive.google.com/uc?export=download&amp;id=1IE0aZtV_fFd2hZwveon_PudqzcPKELBb" target="_blank" rel="noopener">Скачать</a>
+        </div>
+      </article>
+    
+    </div>
+  </section>
+</div>
+
+<div id="pluginsPage" class="page-view page-hidden">
+  <section class="wrap section fade">
+    <div class="section-head">
+      <div>
+        <h2>Плагины</h2>
+        <p>Поиск, избранное, счётчики скачиваний и лайков — всё отдельно для плагинов.</p>
+      </div>
+      <div class="chip"><strong id="pluginCount">11</strong> плагинов</div>
+    </div>
+
+    <div class="search-panel">
+      <div class="search-label">Поиск по плагинам</div>
+      <div class="search-row">
+        <input id="pluginSearchInput" type="text" placeholder="Например: glow, twixtor, glitch..." autocomplete="off" />
+        <button class="search-clear" id="pluginClearBtn" type="button">Очистить</button>
+      </div>
+      <div class="result-line">Найдено: <span class="count" id="pluginResultCount">11</span></div>
+    </div>
+
+    <div class="favorites-panel">
+      <div class="section-head">
+        <div><h2>Избранные плагины</h2><p>Сюда попадают плагины, которые ты отметил звездочкой.</p></div>
+        <div class="chip">Сохранено в браузере</div>
+      </div>
+      <div class="favorites-grid" id="pluginFavoritesGrid"></div>
+      <div class="empty-favorites" id="pluginEmptyFavorites">Здесь пока пусто. Нажми на звездочку у любого плагина, и он появится тут.</div>
+    </div>
+
+    <div class="search-results-panel" style="display:block;">
+      <div class="section-head">
+        <div>
+          <h2>Каталог плагинов</h2>
+          <p>Нажми «Подробнее», чтобы увидеть описание, а «Скачать» — чтобы перейти к загрузке.</p>
+        </div>
+        <div class="chip">Всего: <strong>11</strong></div>
+      </div>
+      <div class="grid" id="pluginCards">
+
+      <article class="card plugin-card fade" data-key="sapphire" data-search="sapphire 1,07 гб плагин sapphire от boris fx для adobe after effects — это набор из более чем 270 профессиональных эффектов и 3000+ пресетов, предназначенных для ускорения создания высококачественных визуальных эффектов (vfx), кинематографичного освещения, свечений (glows), переходов и стилизации видео, недоступных стандартными средствами." data-download="https://drive.google.com/uc?export=download&amp;id=1tkMo3k1mBIrb80f_PBMusl8vSEn8L-EF" data-size="1,07 ГБ" data-desc="Плагин Sapphire от Boris FX для Adobe After Effects — это набор из более чем 270 профессиональных эффектов и 3000+ пресетов, предназначенных для ускорения создания высококачественных визуальных эффектов (VFX), кинематографичного освещения, свечений (glows), переходов и стилизации видео, недоступных стандартными средствами." data-items="Плагин для After Effects">
+        <div class="card-head">
+          <h3 class="title">Sapphire</h3>
+          <button class="fav-btn" type="button" aria-label="Добавить в избранное"><span>☆</span></button>
+        </div>
+        <div class="free">Плагин</div>
+        <div class="pack-size">1,07 ГБ</div>
+        <p class="plugin-desc">Плагин Sapphire от Boris FX для Adobe After Effects — это набор из более чем 270 профессиональных эффектов и 3000+ пресетов, предназначенных для ускорения создания высококачественных визуальных эффектов (VFX), кинематографичного освещения, свечений (glows), переходов и стилизации видео, недоступных стандартными средствами.</p>
+        <div class="dl-counter"><span class="dl-counter-icon">↓</span><span class="dl-counter-num">0</span>&nbsp;скачиваний</div>
+        <div class="card-stats">
+          <button class="like-btn" type="button"><span class="like-icon">♥</span><span class="like-count">0</span></button>
+        </div>
+        <div class="card-actions">
+          <a class="btn dl-btn" href="https://drive.google.com/uc?export=download&amp;id=1tkMo3k1mBIrb80f_PBMusl8vSEn8L-EF" target="_blank" rel="noopener">Скачать</a>
+          <button class="about-btn" type="button">Подробнее</button>
+        </div>
+      </article>
+    
+
+      <article class="card plugin-card fade" data-key="bcc" data-search="bcc 433,2 мб плагин bcc (boris continuum complete) в after effects — это обширный набор профессиональных инструментов (более 300 эффектов), ускоряющий работу над видео. он используется для создания 3d-титров, сложного кеинга (green screen), цветокоррекции, стилизации, а также добавления световых эффектов и переходов, оптимизируя сложные задачи." data-download="https://drive.google.com/uc?export=download&amp;id=1bxkHUHctXu6JyVgKywaBLXF-_LU-OqK9" data-size="433,2 МБ" data-desc="Плагин BCC (Boris Continuum Complete) в After Effects — это обширный набор профессиональных инструментов (более 300 эффектов), ускоряющий работу над видео. Он используется для создания 3D-титров, сложного кеинга (green screen), цветокоррекции, стилизации, а также добавления световых эффектов и переходов, оптимизируя сложные задачи." data-items="Плагин для After Effects">
+        <div class="card-head">
+          <h3 class="title">BCC</h3>
+          <button class="fav-btn" type="button" aria-label="Добавить в избранное"><span>☆</span></button>
+        </div>
+        <div class="free">Плагин</div>
+        <div class="pack-size">433,2 МБ</div>
+        <p class="plugin-desc">Плагин BCC (Boris Continuum Complete) в After Effects — это обширный набор профессиональных инструментов (более 300 эффектов), ускоряющий работу над видео. Он используется для создания 3D-титров, сложного кеинга (green screen), цветокоррекции, стилизации, а также добавления световых эффектов и переходов, оптимизируя сложные задачи.</p>
+        <div class="dl-counter"><span class="dl-counter-icon">↓</span><span class="dl-counter-num">0</span>&nbsp;скачиваний</div>
+        <div class="card-stats">
+          <button class="like-btn" type="button"><span class="like-icon">♥</span><span class="like-count">0</span></button>
+        </div>
+        <div class="card-actions">
+          <a class="btn dl-btn" href="https://drive.google.com/uc?export=download&amp;id=1bxkHUHctXu6JyVgKywaBLXF-_LU-OqK9" target="_blank" rel="noopener">Скачать</a>
+          <button class="about-btn" type="button">Подробнее</button>
+        </div>
+      </article>
+    
+
+      <article class="card plugin-card fade" data-key="magic-bullet-suite" data-search="magic bullet suite 341,7 мб magic bullet suite — это набор профессиональных плагинов для after effects (и premiere pro), предназначенный для высококачественной цветокоррекции, стилизации видео, улучшения освещения и добавления эффектов кинематографической пленки. он позволяет быстро делать скучное видео профессиональным с помощью готовых пресетов (looks) и инструментов точной настройки цвета (colorista)." data-download="https://drive.google.com/uc?export=download&amp;id=1stDpZqXA8L2o3loQFZW78hKjVOehbA5W" data-size="341,7 МБ" data-desc="Magic Bullet Suite — это набор профессиональных плагинов для After Effects (и Premiere Pro), предназначенный для высококачественной цветокоррекции, стилизации видео, улучшения освещения и добавления эффектов кинематографической пленки. Он позволяет быстро делать скучное видео профессиональным с помощью готовых пресетов (Looks) и инструментов точной настройки цвета (Colorista)." data-items="Плагин для After Effects">
+        <div class="card-head">
+          <h3 class="title">Magic Bullet Suite</h3>
+          <button class="fav-btn" type="button" aria-label="Добавить в избранное"><span>☆</span></button>
+        </div>
+        <div class="free">Плагин</div>
+        <div class="pack-size">341,7 МБ</div>
+        <p class="plugin-desc">Magic Bullet Suite — это набор профессиональных плагинов для After Effects (и Premiere Pro), предназначенный для высококачественной цветокоррекции, стилизации видео, улучшения освещения и добавления эффектов кинематографической пленки. Он позволяет быстро делать скучное видео профессиональным с помощью готовых пресетов (Looks) и инструментов точной настройки цвета (Colorista).</p>
+        <div class="dl-counter"><span class="dl-counter-icon">↓</span><span class="dl-counter-num">0</span>&nbsp;скачиваний</div>
+        <div class="card-stats">
+          <button class="like-btn" type="button"><span class="like-icon">♥</span><span class="like-count">0</span></button>
+        </div>
+        <div class="card-actions">
+          <a class="btn dl-btn" href="https://drive.google.com/uc?export=download&amp;id=1stDpZqXA8L2o3loQFZW78hKjVOehbA5W" target="_blank" rel="noopener">Скачать</a>
+          <button class="about-btn" type="button">Подробнее</button>
+        </div>
+      </article>
+    
+
+      <article class="card plugin-card fade" data-key="twixtor" data-search="twixtor 22,2 мб плагин twixtor от re:vision effects в after effects нужен для создания экстремально плавного замедленного видео (slow-motion) и ускорения видео (таймлапсов) путем интеллектуальной интерполяции кадров. он анализирует движение пикселей и дорисовывает промежуточные кадры, позволяя замедлить видео в 10–20 раз без видимых «рывков» или «призраков»." data-download="https://drive.google.com/uc?export=download&amp;id=1-uZpkP1NIp0D19DcPGxtigIdPOTSEE_n" data-size="22,2 МБ" data-desc="Плагин Twixtor от RE:Vision Effects в After Effects нужен для создания экстремально плавного замедленного видео (slow-motion) и ускорения видео (таймлапсов) путем интеллектуальной интерполяции кадров. Он анализирует движение пикселей и дорисовывает промежуточные кадры, позволяя замедлить видео в 10–20 раз без видимых «рывков» или «призраков»." data-items="Плагин для After Effects">
+        <div class="card-head">
+          <h3 class="title">Twixtor</h3>
+          <button class="fav-btn" type="button" aria-label="Добавить в избранное"><span>☆</span></button>
+        </div>
+        <div class="free">Плагин</div>
+        <div class="pack-size">22,2 МБ</div>
+        <p class="plugin-desc">Плагин Twixtor от RE:Vision Effects в After Effects нужен для создания экстремально плавного замедленного видео (slow-motion) и ускорения видео (таймлапсов) путем интеллектуальной интерполяции кадров. Он анализирует движение пикселей и дорисовывает промежуточные кадры, позволяя замедлить видео в 10–20 раз без видимых «рывков» или «призраков».</p>
+        <div class="dl-counter"><span class="dl-counter-icon">↓</span><span class="dl-counter-num">0</span>&nbsp;скачиваний</div>
+        <div class="card-stats">
+          <button class="like-btn" type="button"><span class="like-icon">♥</span><span class="like-count">0</span></button>
+        </div>
+        <div class="card-actions">
+          <a class="btn dl-btn" href="https://drive.google.com/uc?export=download&amp;id=1-uZpkP1NIp0D19DcPGxtigIdPOTSEE_n" target="_blank" rel="noopener">Скачать</a>
+          <button class="about-btn" type="button">Подробнее</button>
+        </div>
+      </article>
+    
+
+      <article class="card plugin-card fade" data-key="element-3d" data-search="element 3d 288 мб element 3d от video copilot — это плагин для adobe after effects, предназначенный для быстрого импорта, текстурирования, анимации и рендеринга 3d-моделей в реальном времени прямо внутри композиции. он позволяет создавать реалистичный 3d-текст, объемные логотипы, сложные сцены и motion-дизайн без использования тяжелых 3d-редакторов." data-download="https://drive.google.com/uc?export=download&amp;id=1fvd8-_daB1KsjJqft2KkYpnRC7O2eBCq" data-size="288 МБ" data-desc="Element 3D от Video Copilot — это плагин для Adobe After Effects, предназначенный для быстрого импорта, текстурирования, анимации и рендеринга 3D-моделей в реальном времени прямо внутри композиции. Он позволяет создавать реалистичный 3D-текст, объемные логотипы, сложные сцены и motion-дизайн без использования тяжелых 3D-редакторов." data-items="Плагин для After Effects">
+        <div class="card-head">
+          <h3 class="title">Element 3D</h3>
+          <button class="fav-btn" type="button" aria-label="Добавить в избранное"><span>☆</span></button>
+        </div>
+        <div class="free">Плагин</div>
+        <div class="pack-size">288 МБ</div>
+        <p class="plugin-desc">Element 3D от Video Copilot — это плагин для Adobe After Effects, предназначенный для быстрого импорта, текстурирования, анимации и рендеринга 3D-моделей в реальном времени прямо внутри композиции. Он позволяет создавать реалистичный 3D-текст, объемные логотипы, сложные сцены и motion-дизайн без использования тяжелых 3D-редакторов.</p>
+        <div class="dl-counter"><span class="dl-counter-icon">↓</span><span class="dl-counter-num">0</span>&nbsp;скачиваний</div>
+        <div class="card-stats">
+          <button class="like-btn" type="button"><span class="like-icon">♥</span><span class="like-count">0</span></button>
+        </div>
+        <div class="card-actions">
+          <a class="btn dl-btn" href="https://drive.google.com/uc?export=download&amp;id=1fvd8-_daB1KsjJqft2KkYpnRC7O2eBCq" target="_blank" rel="noopener">Скачать</a>
+          <button class="about-btn" type="button">Подробнее</button>
+        </div>
+      </article>
+    
+
+      <article class="card plugin-card fade" data-key="deep-glow" data-search="deep glow 2 мб плагин deep glow в after effects предназначен для создания реалистичного, кинематографичного эффекта свечения (glow). в отличие от стандартного эффекта glow, он обеспечивает более точное, качественное и быстрое рендерение, автоматически обрабатывая hdr-изображения и создавая фотореалистичные ореолы." data-download="https://drive.google.com/uc?export=download&amp;id=11D3GP6A3wOjs7PXL_h0liaQ5lNGgXM6H" data-size="2 МБ" data-desc="Плагин Deep Glow в After Effects предназначен для создания реалистичного, кинематографичного эффекта свечения (glow). В отличие от стандартного эффекта Glow, он обеспечивает более точное, качественное и быстрое рендерение, автоматически обрабатывая HDR-изображения и создавая фотореалистичные ореолы." data-items="Плагин для After Effects">
+        <div class="card-head">
+          <h3 class="title">Deep Glow</h3>
+          <button class="fav-btn" type="button" aria-label="Добавить в избранное"><span>☆</span></button>
+        </div>
+        <div class="free">Плагин</div>
+        <div class="pack-size">2 МБ</div>
+        <p class="plugin-desc">Плагин Deep Glow в After Effects предназначен для создания реалистичного, кинематографичного эффекта свечения (glow). В отличие от стандартного эффекта Glow, он обеспечивает более точное, качественное и быстрое рендерение, автоматически обрабатывая HDR-изображения и создавая фотореалистичные ореолы.</p>
+        <div class="dl-counter"><span class="dl-counter-icon">↓</span><span class="dl-counter-num">0</span>&nbsp;скачиваний</div>
+        <div class="card-stats">
+          <button class="like-btn" type="button"><span class="like-icon">♥</span><span class="like-count">0</span></button>
+        </div>
+        <div class="card-actions">
+          <a class="btn dl-btn" href="https://drive.google.com/uc?export=download&amp;id=11D3GP6A3wOjs7PXL_h0liaQ5lNGgXM6H" target="_blank" rel="noopener">Скачать</a>
+          <button class="about-btn" type="button">Подробнее</button>
+        </div>
+      </article>
+    
+
+      <article class="card plugin-card fade" data-key="deep-glow-2" data-search="deep glow 2 20,9 мб deep glow 2 — это плагин для after effects, созданный для генерации реалистичного, мягкого и физически корректного свечения (glow). в отличие от стандартных инструментов ae, он автоматически работает в линейном цветовом пространстве, создавая качественные эффекты неона, света и вспышек." data-download="https://drive.google.com/uc?export=download&amp;id=13ALFEzFzsIYXXx3wRVaSuqnIoGGsGEnZ" data-size="20,9 МБ" data-desc="Deep Glow 2 — это плагин для After Effects, созданный для генерации реалистичного, мягкого и физически корректного свечения (glow). В отличие от стандартных инструментов AE, он автоматически работает в линейном цветовом пространстве, создавая качественные эффекты неона, света и вспышек." data-items="Плагин для After Effects">
+        <div class="card-head">
+          <h3 class="title">Deep Glow 2</h3>
+          <button class="fav-btn" type="button" aria-label="Добавить в избранное"><span>☆</span></button>
+        </div>
+        <div class="free">Плагин</div>
+        <div class="pack-size">20,9 МБ</div>
+        <p class="plugin-desc">Deep Glow 2 — это плагин для After Effects, созданный для генерации реалистичного, мягкого и физически корректного свечения (glow). В отличие от стандартных инструментов AE, он автоматически работает в линейном цветовом пространстве, создавая качественные эффекты неона, света и вспышек.</p>
+        <div class="dl-counter"><span class="dl-counter-icon">↓</span><span class="dl-counter-num">0</span>&nbsp;скачиваний</div>
+        <div class="card-stats">
+          <button class="like-btn" type="button"><span class="like-icon">♥</span><span class="like-count">0</span></button>
+        </div>
+        <div class="card-actions">
+          <a class="btn dl-btn" href="https://drive.google.com/uc?export=download&amp;id=13ALFEzFzsIYXXx3wRVaSuqnIoGGsGEnZ" target="_blank" rel="noopener">Скачать</a>
+          <button class="about-btn" type="button">Подробнее</button>
+        </div>
+      </article>
+    
+
+      <article class="card plugin-card fade" data-key="fxconsole" data-search="fxconsole 1,7 мб плагин fx console от video copilot нужен для кардинального ускорения рабочего процесса в after effects. он заменяет долгий поиск в панели effects &amp; presets быстрым текстовым поиском, позволяя мгновенно добавлять эффекты, делать скриншоты композиции и управлять ими." data-download="https://drive.google.com/uc?export=download&amp;id=1q02QndW4fB8EMpscBIrmwL3LilncGh3G" data-size="1,7 МБ" data-desc="Плагин FX Console от Video Copilot нужен для кардинального ускорения рабочего процесса в After Effects. Он заменяет долгий поиск в панели Effects &amp; Presets быстрым текстовым поиском, позволяя мгновенно добавлять эффекты, делать скриншоты композиции и управлять ими." data-items="Плагин для After Effects">
+        <div class="card-head">
+          <h3 class="title">FXConsole</h3>
+          <button class="fav-btn" type="button" aria-label="Добавить в избранное"><span>☆</span></button>
+        </div>
+        <div class="free">Плагин</div>
+        <div class="pack-size">1,7 МБ</div>
+        <p class="plugin-desc">Плагин FX Console от Video Copilot нужен для кардинального ускорения рабочего процесса в After Effects. Он заменяет долгий поиск в панели Effects &amp; Presets быстрым текстовым поиском, позволяя мгновенно добавлять эффекты, делать скриншоты композиции и управлять ими.</p>
+        <div class="dl-counter"><span class="dl-counter-icon">↓</span><span class="dl-counter-num">0</span>&nbsp;скачиваний</div>
+        <div class="card-stats">
+          <button class="like-btn" type="button"><span class="like-icon">♥</span><span class="like-count">0</span></button>
+        </div>
+        <div class="card-actions">
+          <a class="btn dl-btn" href="https://drive.google.com/uc?export=download&amp;id=1q02QndW4fB8EMpscBIrmwL3LilncGh3G" target="_blank" rel="noopener">Скачать</a>
+          <button class="about-btn" type="button">Подробнее</button>
+        </div>
+      </article>
+    
+
+      <article class="card plugin-card fade" data-key="twitch" data-search="twitch 447 кб плагин twitch от video copilot в after effects нужен для автоматического создания эффектов «глюков» (glitch), дрожания, быстрых цветовых вспышек, размытия и других динамических искажений." data-download="https://drive.google.com/uc?export=download&amp;id=1LIm4XV4Hs2s1nA5CXYjnWOrHNnVjbQt3" data-size="447 КБ" data-desc="Плагин Twitch от Video Copilot в After Effects нужен для автоматического создания эффектов «глюков» (glitch), дрожания, быстрых цветовых вспышек, размытия и других динамических искажений." data-items="Плагин для After Effects">
+        <div class="card-head">
+          <h3 class="title">Twitch</h3>
+          <button class="fav-btn" type="button" aria-label="Добавить в избранное"><span>☆</span></button>
+        </div>
+        <div class="free">Плагин</div>
+        <div class="pack-size">447 КБ</div>
+        <p class="plugin-desc">Плагин Twitch от Video Copilot в After Effects нужен для автоматического создания эффектов «глюков» (glitch), дрожания, быстрых цветовых вспышек, размытия и других динамических искажений.</p>
+        <div class="dl-counter"><span class="dl-counter-icon">↓</span><span class="dl-counter-num">0</span>&nbsp;скачиваний</div>
+        <div class="card-stats">
+          <button class="like-btn" type="button"><span class="like-icon">♥</span><span class="like-count">0</span></button>
+        </div>
+        <div class="card-actions">
+          <a class="btn dl-btn" href="https://drive.google.com/uc?export=download&amp;id=1LIm4XV4Hs2s1nA5CXYjnWOrHNnVjbQt3" target="_blank" rel="noopener">Скачать</a>
+          <button class="about-btn" type="button">Подробнее</button>
+        </div>
+      </article>
+    
+
+      <article class="card plugin-card fade" data-key="glitchify" data-search="glitchify 505 кб плагин glitchify (от cinema spice) в after effects нужен для быстрого и качественного создания цифровых помех, искажений и эффектов «битого» видео. он позволяет имитировать телевизионные сбои, сдвиги каналов, цифровой шум и геометрические искажения, обеспечивая высокую гибкость настройки каждого параметра для профессионального видеомонтажа." data-download="https://drive.google.com/uc?export=download&amp;id=1usglFaxOyWXvx5fTDjEWC5bhGr0teo42" data-size="505 КБ" data-desc="Плагин Glitchify (от Cinema Spice) в After Effects нужен для быстрого и качественного создания цифровых помех, искажений и эффектов «битого» видео. Он позволяет имитировать телевизионные сбои, сдвиги каналов, цифровой шум и геометрические искажения, обеспечивая высокую гибкость настройки каждого параметра для профессионального видеомонтажа." data-items="Плагин для After Effects">
+        <div class="card-head">
+          <h3 class="title">Glitchify</h3>
+          <button class="fav-btn" type="button" aria-label="Добавить в избранное"><span>☆</span></button>
+        </div>
+        <div class="free">Плагин</div>
+        <div class="pack-size">505 КБ</div>
+        <p class="plugin-desc">Плагин Glitchify (от Cinema Spice) в After Effects нужен для быстрого и качественного создания цифровых помех, искажений и эффектов «битого» видео. Он позволяет имитировать телевизионные сбои, сдвиги каналов, цифровой шум и геометрические искажения, обеспечивая высокую гибкость настройки каждого параметра для профессионального видеомонтажа.</p>
+        <div class="dl-counter"><span class="dl-counter-icon">↓</span><span class="dl-counter-num">0</span>&nbsp;скачиваний</div>
+        <div class="card-stats">
+          <button class="like-btn" type="button"><span class="like-icon">♥</span><span class="like-count">0</span></button>
+        </div>
+        <div class="card-actions">
+          <a class="btn dl-btn" href="https://drive.google.com/uc?export=download&amp;id=1usglFaxOyWXvx5fTDjEWC5bhGr0teo42" target="_blank" rel="noopener">Скачать</a>
+          <button class="about-btn" type="button">Подробнее</button>
+        </div>
+      </article>
+    
+
+      <article class="card plugin-card fade" data-key="signal" data-search="signal 7,6 мб плагин signal для after effects предназначен для реалистичной имитации аналоговых видеоискажений, vhs-помех, сбоев (глитчей) и шумов. в отличие от простых эффектов, он эмулирует процесс кодирования/декодирования аналогового сигнала, создавая аутентичные телевизионные искажения, сдвиги строк, цветовую аберрацию и шум." data-download="https://drive.google.com/uc?export=download&amp;id=1xGM-K2DDOTdUbzZ1xXxwVsxNEu8twM-8" data-size="7,6 МБ" data-desc="Плагин Signal для After Effects предназначен для реалистичной имитации аналоговых видеоискажений, VHS-помех, сбоев (глитчей) и шумов. В отличие от простых эффектов, он эмулирует процесс кодирования/декодирования аналогового сигнала, создавая аутентичные телевизионные искажения, сдвиги строк, цветовую аберрацию и шум." data-items="Плагин для After Effects">
+        <div class="card-head">
+          <h3 class="title">Signal</h3>
+          <button class="fav-btn" type="button" aria-label="Добавить в избранное"><span>☆</span></button>
+        </div>
+        <div class="free">Плагин</div>
+        <div class="pack-size">7,6 МБ</div>
+        <p class="plugin-desc">Плагин Signal для After Effects предназначен для реалистичной имитации аналоговых видеоискажений, VHS-помех, сбоев (глитчей) и шумов. В отличие от простых эффектов, он эмулирует процесс кодирования/декодирования аналогового сигнала, создавая аутентичные телевизионные искажения, сдвиги строк, цветовую аберрацию и шум.</p>
+        <div class="dl-counter"><span class="dl-counter-icon">↓</span><span class="dl-counter-num">0</span>&nbsp;скачиваний</div>
+        <div class="card-stats">
+          <button class="like-btn" type="button"><span class="like-icon">♥</span><span class="like-count">0</span></button>
+        </div>
+        <div class="card-actions">
+          <a class="btn dl-btn" href="https://drive.google.com/uc?export=download&amp;id=1xGM-K2DDOTdUbzZ1xXxwVsxNEu8twM-8" target="_blank" rel="noopener">Скачать</a>
+          <button class="about-btn" type="button">Подробнее</button>
+        </div>
+      </article>
+    
+      </div>
+      <div class="empty-state" id="pluginEmptyState" style="display:none">Ничего не найдено. Попробуй другое слово, например: <b>glow</b>, <b>twixtor</b>, <b>signal</b>.</div>
+    </div>
+  </section>
+</div>
+
+<!-- Firebase SDK (compat version — works without bundler) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
+<script>
+/* =============================================
+   FIREBASE INIT
+   ============================================= */
+  const firebaseConfig = {
+    apiKey: "AIzaSyAkoOXzdvlGNT8b1dJbGmGDEnaEWlpDFdU",
+    authDomain: "ae-presets.firebaseapp.com",
+    databaseURL: "https://ae-presets-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "ae-presets",
+    storageBucket: "ae-presets.firebasestorage.app",
+    messagingSenderId: "701819786593",
+    appId: "1:701819786593:web:f2c0b4c6cdf3bb685be120"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const fbAuth = firebase.auth();
+  const fbDb   = firebase.database();
+
+  const LOCAL_COUNTER_KEY = 'ae_site_local_counters_v1';
+
+  function safeJsonParse(raw, fallback) {
+    try { return JSON.parse(raw); } catch { return fallback; }
+  }
+
+  function loadLocalCounters() {
+    const data = safeJsonParse(localStorage.getItem(LOCAL_COUNTER_KEY) || '{}', {});
+    return (data && typeof data === 'object' && !Array.isArray(data)) ? data : {};
+  }
+
+  function saveLocalCounters() {
+    try {
+      localStorage.setItem(LOCAL_COUNTER_KEY, JSON.stringify(_counters));
+    } catch (e) {
+      console.warn('saveLocalCounters error', e);
+    }
+  }
+
+  function resolveAssetUrl(src) {
+    if (!src) return '';
+    try {
+      return new URL(src, document.baseURI).href;
+    } catch {
+      return src;
+    }
+  }
+
+/* =============================================
+   PACK SIZES MAP
+   ============================================= */
+  const PACK_SIZES = {
+    'trxzy-editing-pack': '79 МБ',
+    'seb-aep-pack': '170 КБ',
+    'ezo-editing-bundle': '13 КБ',
+    'envyy-editing-pack': '493 МБ',
+    'legan-editing-bundle': '2,6 МБ',
+    'drxpz-editing-presets': '6,3 МБ',
+    'final-cut-editing-pack': '461 МБ',
+    'text-animations-pack': '97 КБ',
+    'ctoan-ultimate-pack': '600 МБ',
+    'joshh-editing-pack-v3': '180 МБ',
+    'przms-new-editing-pack': '512 КБ',
+    'clovers-text-pack': '64,3 МБ',
+    'gumis-editing-pack': '884 КБ',
+    'everything-pack-1': '748 КБ',
+    'cas-new-aesthetic-pack': '1,08 МБ',
+    'prevail-aesthetic-pack': '704 КБ',
+    'creed-aesthetic-pack-vol2': '180 МБ',
+    'beasty-main-aura-pack': '372 КБ',
+    'alex-ae-2k-editing-pack': '2,83 МБ'
+  };
+
+  const FAV_KEY      = 'ae_editor_favorites_v1';
+  const LIKE_KEY     = 'ae_editor_liked_v1';
+  const LOCAL_DL_KEY = 'ae_site_local_dl_v1'; // local dl fallback
+
+/* =============================================
+   REALTIME DATABASE COUNTERS
+   ============================================= */
+  // In-memory cache of counters loaded from Firebase
+  const _counters = loadLocalCounters(); // { key: { dl: N, likes: N } }
+
+  function getCount(key, type) {
+    return _counters[key]?.[type] || 0;
+  }
+
+  function updateAllCounterDisplays(key) {
+    const escaped = CSS.escape(key);
+    const dl    = getCount(key, 'dl');
+    const likes = getCount(key, 'likes');
+    document.querySelectorAll(`[data-key="${escaped}"] .dl-counter-num`).forEach(el => {
+      const prevDl = parseInt(el.textContent, 10);
+      el.textContent = dl;
+      const counter = el.closest('.dl-counter');
+      if (counter && dl !== prevDl) { counter.classList.add('bumping'); setTimeout(() => counter.classList.remove('bumping'), 500); }
+    });
+    document.querySelectorAll(`[data-key="${escaped}"] .like-count`).forEach(el => {
+      el.textContent = likes;
+    });
+  }
+
+  // Subscribe to ALL counters at once (one listener, efficient)
+  function subscribeToCounters() {
+    fbDb.ref('counters').on('value', snap => {
+      const data = snap.val() || {};
+      // Merge Firebase data with local fallback counters so the UI still works
+      // even if the current visitor cannot write to Realtime Database.
+      Object.keys(data).forEach(key => {
+        const remoteDl = Number((data[key] && data[key].downloads) || 0);
+        const remoteLikes = Number((data[key] && data[key].likes) || 0);
+        const current = _counters[key] || {};
+        _counters[key] = {
+          dl: Math.max(Number(current.dl) || 0, remoteDl),
+          likes: Math.max(Number(current.likes) || 0, remoteLikes),
+        };
+        updateAllCounterDisplays(key);
+      });
+      document.querySelectorAll('[data-key]').forEach(el => {
+        const key = el.dataset.key;
+        if (key && !data[key]) updateAllCounterDisplays(key);
+      });
+      saveLocalCounters();
+      if (window.syncRecommendations) window.syncRecommendations();
+    }, err => {
+      console.error('Firebase counters error:', err);
+    });
+  }
+
+  const dlIncrement = async (key) => {
+    // Optimistic local update first for instant UI feedback
+    if (!_counters[key]) _counters[key] = { dl: 0, likes: 0 };
+    _counters[key].dl = (_counters[key].dl || 0) + 1;
+    updateAllCounterDisplays(key);
+    saveLocalCounters();
+    try {
+      await fbDb.ref(`counters/${key}/downloads`).transaction(val => (val || 0) + 1);
+    } catch(e) {
+      console.warn('dlIncrement firebase error for', key, e);
+    }
+  };
+
+  const likeIncrement = async (key) => {
+    // Optimistic local update
+    if (!_counters[key]) _counters[key] = { dl: 0, likes: 0 };
+    _counters[key].likes = (_counters[key].likes || 0) + 1;
+    updateAllCounterDisplays(key);
+    saveLocalCounters();
+    try {
+      await fbDb.ref(`counters/${key}/likes`).transaction(val => (val || 0) + 1);
+    } catch(e) {
+      console.warn('likeIncrement firebase error for', key, e);
+    }
+  };
+
+  const likeDecrement = async (key) => {
+    // Optimistic local update
+    if (!_counters[key]) _counters[key] = { dl: 0, likes: 0 };
+    _counters[key].likes = Math.max(0, (_counters[key].likes || 0) - 1);
+    updateAllCounterDisplays(key);
+    try {
+      await fbDb.ref(`counters/${key}/likes`).transaction(val => Math.max(0, (val || 0) - 1));
+    } catch(e) {
+      console.warn('likeDecrement firebase error for', key, e);
+    }
+    saveLocalCounters();
+  };
+
+  // Initialize all counters in DOM to 0 initially (Firebase will update them)
+  function initAllCounters() {
+    document.querySelectorAll('[data-key]').forEach(el => {
+      const key = el.dataset.key;
+      if (!key) return;
+      const dlEl = el.querySelector('.dl-counter-num');
+      if (dlEl) dlEl.textContent = getCount(key, 'dl');
+      const likeEl = el.querySelector('.like-count');
+      if (likeEl) likeEl.textContent = getCount(key, 'likes');
+    });
+  }
+
+/* =============================================
+   FIREBASE AUTH wrapper
+   ============================================= */
+  let _currentUser = null;
+  let _canDownload = false;
+
+  window.firebaseAuth = {
+    isVerified: () => !!_currentUser && (_currentUser.emailVerified || _currentUser.providerData?.some(p => p.providerId === 'google.com')),
+    signOut: () => fbAuth.signOut(),
+    reloadUser: () => fbAuth.currentUser?.reload(),
+    signInEmail: (email, password) => fbAuth.signInWithEmailAndPassword(email, password),
+    registerEmail: async (email, password) => {
+      const cred = await fbAuth.createUserWithEmailAndPassword(email, password);
+      await cred.user.sendEmailVerification();
+      return cred;
+    },
+    sendPasswordReset: (email) => fbAuth.sendPasswordResetEmail(email),
+    signInGoogle: async () => {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      return fbAuth.signInWithPopup(provider);
+    },
+    sendVerification: () => fbAuth.currentUser?.sendEmailVerification(),
+  };
+
+  // Auth state listener — single source of truth
+  fbAuth.onAuthStateChanged(async (user) => {
+    if (user) {
+      try { await user.reload(); } catch(e) {}
+      _currentUser = fbAuth.currentUser;
+    } else {
+      _currentUser = null;
+    }
+    if (window.onAuthChange) window.onAuthChange(_currentUser);
+  });
+
+/* =============================================
+   PROGRESS BAR
+   ============================================= */
+  window.addEventListener('scroll', () => {
+    const s = document.documentElement.scrollTop;
+    const h = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+    document.getElementById('progress').style.width = (h > 0 ? (s/h)*100 : 0) + '%';
+  }, { passive: true });
+
+/* =============================================
+   FADE OBSERVER
+   ============================================= */
+  const fadeObs = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('show'); });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.fade').forEach(el => fadeObs.observe(el));
+
+/* =============================================
+   CARD GLOW
+   ============================================= */
+  document.querySelectorAll('.card').forEach(card => {
+    card.addEventListener('mousemove', e => {
+      const r = card.getBoundingClientRect();
+      card.style.setProperty('--mx', `${e.clientX - r.left}px`);
+      card.style.setProperty('--my', `${e.clientY - r.top}px`);
+    });
+  });
+
+/* =============================================
+   PACK SIZE BADGES
+   ============================================= */
+  function applyPackSizes() {
+    allCards.forEach(card => {
+      const key = getKey(card);
+      const size = card.dataset.size || PACK_SIZES[key];
+      if (!size) return;
+      card.dataset.size = size;
+      const free = card.querySelector('.free');
+      if (free && !card.querySelector('.pack-size')) {
+        const badge = document.createElement('div');
+        badge.className = 'pack-size';
+        badge.textContent = size;
+        free.insertAdjacentElement('afterend', badge);
+      }
+    });
+  }
+
+/* =============================================
+   SEARCH + SHOW-MORE (8 packs initial)
+   ============================================= */
+  const input       = document.getElementById('searchInput');
+  const cardsGrid   = document.getElementById('cards');
+  const cards       = Array.from(document.querySelectorAll('#cards .card'));
+  const allCards    = cards;
+  const recGrid     = document.getElementById('recommendationsGrid');
+  const showMoreWrap = document.getElementById('showMoreWrap');
+  const showMoreBtn  = document.getElementById('showMoreBtn');
+  let visiblePackCount = 0;
+  const INITIAL_PACKS = 8;
+
+  function cardsPerRow() {
+    const cols = window.getComputedStyle(cardsGrid).gridTemplateColumns.split(' ').filter(Boolean).length;
+    return Math.max(1, cols || 1);
+  }
+  function updateMoreButtonLabel() {
+    if (!showMoreBtn) return;
+    showMoreBtn.textContent = visiblePackCount >= cards.length ? 'Свернуть' : 'Ещё';
+  }
+  function updateCardVisibility(reset = false) {
+    if (reset || visiblePackCount < INITIAL_PACKS) visiblePackCount = Math.min(INITIAL_PACKS, cards.length);
+    cards.forEach((card, index) => card.classList.toggle('more-hidden', index >= visiblePackCount));
+    if (showMoreWrap) showMoreWrap.style.display = cards.length > visiblePackCount ? 'flex' : 'none';
+    updateMoreButtonLabel();
+  }
+  if (showMoreBtn) {
+    showMoreBtn.addEventListener('click', () => {
+      const step = cardsPerRow() * 2;
+      if (visiblePackCount >= cards.length) {
+        visiblePackCount = Math.min(INITIAL_PACKS, cards.length);
+      } else {
+        visiblePackCount = Math.min(cards.length, visiblePackCount + step);
+      }
+      cards.forEach((card, index) => card.classList.toggle('more-hidden', index >= visiblePackCount));
+      if (showMoreWrap) showMoreWrap.style.display = cards.length > visiblePackCount ? 'flex' : 'none';
+      updateMoreButtonLabel();
+    });
+    window.addEventListener('resize', () => {
+      if (visiblePackCount < cards.length) updateCardVisibility(true);
+    });
+  }
+
+  const emptyRec      = document.getElementById('emptyRecommendations');
+  const searchSection = document.getElementById('searchResultsSection');
+  const searchGrid    = document.getElementById('searchResultsGrid');
+  const emptySearch   = document.getElementById('emptySearchResults');
+  const searchHint    = document.getElementById('searchHint');
+  document.getElementById('totalPacksChip').textContent = cards.length;
+
+  function resetSearchHint() {
+    searchHint.innerHTML = `Всего паков: <span class="count">${cards.length}</span>`;
+  }
+
+  function renderSearchResults() {
+    const val = input.value.trim().toLowerCase();
+    if (!val) {
+      searchSection.style.display = 'none';
+      searchGrid.innerHTML = '';
+      emptySearch.style.display = 'none';
+      resetSearchHint();
+      document.getElementById('resultCount').textContent = 0;
+      return;
+    }
+    const ranked = cards
+      .filter(c => (c.dataset.name || '').includes(val))
+      .sort((a, b) => a.dataset.name.localeCompare(b.dataset.name, 'ru'));
+
+    searchSection.style.display = 'block';
+    searchGrid.innerHTML = '';
+    document.getElementById('resultCount').textContent = ranked.length;
+    searchHint.textContent = `Показаны результаты для "${input.value.trim()}"`;
+    emptySearch.style.display = ranked.length ? 'none' : 'block';
+
+    ranked.forEach(card => {
+      const key = getKey(card);
+      const clone = card.cloneNode(true);
+      clone.classList.remove('fade', 'more-hidden');
+      clone.classList.add('show');
+      const dlEl = clone.querySelector('.dl-counter-num');
+      if (dlEl) dlEl.textContent = getCount(key, 'dl');
+      const likeEl = clone.querySelector('.like-count');
+      if (likeEl) likeEl.textContent = getCount(key, 'likes');
+      clone.querySelector('.dl-btn')?.addEventListener('click', () => dlIncrement(key));
+      clone.querySelector('.about-btn')?.addEventListener('click', () => openModal(card));
+      clone.querySelector('.fav-btn')?.addEventListener('click', e => { e.stopPropagation(); toggleFav(key, card); });
+      clone.querySelector('.like-btn')?.addEventListener('click', e => { e.stopPropagation(); toggleLike(key); });
+      setFavUI(clone, favorites.includes(key));
+      setLikeUI(clone, liked.includes(key));
+      searchGrid.appendChild(clone);
+      applyAuthToContainer(clone);
+    });
+  }
+  input.addEventListener('input', renderSearchResults);
+  resetSearchHint();
+
+/* =============================================
+   RECOMMENDATIONS (sorted by Firebase counters)
+   ============================================= */
+  function recScore(key) {
+    return (getCount(key, 'likes') * 1.5) + (Math.sqrt(getCount(key, 'dl') + 1) * 2);
+  }
+
+  function syncRecommendations() {
+    if (!recGrid) return;
+    const ranked = [...cards]
+      .sort((a, b) => recScore(getKey(b)) - recScore(getKey(a)))
+      .slice(0, 4);
+
+    recGrid.innerHTML = '';
+    if (emptyRec) emptyRec.style.display = ranked.length ? 'none' : 'block';
+
+    ranked.forEach(card => {
+      const key   = getKey(card);
+      const title = card.querySelector('.title')?.textContent || '';
+      const image = card.dataset.image || '';
+      const size  = card.dataset.size || PACK_SIZES[key] || '';
+
+      const item = document.createElement('article');
+      item.className = 'recommendation-card';
+      item.dataset.key = key;
+      item.innerHTML = `
+        <img class="recommendation-thumb" src="${resolveAssetUrl(image)}" alt="${title}" loading="lazy" />
+        <div class="card-head">
+          <h3 class="title">${title}</h3>
+          <button class="fav-btn" type="button" aria-label="Добавить в избранное"><span>☆</span></button>
+        </div>
+        ${size ? `<div class="recommendation-size">${size}</div>` : ''}
+        <div class="card-stats">
+          <div class="dl-counter"><span class="dl-counter-icon">↓</span><span class="dl-counter-num">${getCount(key,'dl')}</span>&nbsp;скачиваний</div>
+          <button class="like-btn" type="button" aria-pressed="false" aria-label="Поставить лайк"><span class="like-icon">♥</span><span class="like-count">${getCount(key,'likes')}</span></button>
+        </div>
+        <div class="recommendation-actions">
+          <a class="btn dl-btn" href="${card.dataset.download}" target="_blank" rel="noopener">Скачать</a>
+          <button class="about-btn" type="button">О паке</button>
+        </div>`;
+
+      item.querySelector('.dl-btn')?.addEventListener('click', () => dlIncrement(key));
+      item.querySelector('.about-btn')?.addEventListener('click', () => openModal(card));
+      item.querySelector('.fav-btn')?.addEventListener('click', e => { e.stopPropagation(); toggleFav(key, card); });
+      item.querySelector('.like-btn')?.addEventListener('click', e => { e.stopPropagation(); toggleLike(key); });
+      setFavUI(item, favorites.includes(key));
+      setLikeUI(item, liked.includes(key));
+      recGrid.appendChild(item);
+      applyAuthToContainer(item);
+    });
+  }
+  window.syncRecommendations = syncRecommendations;
+
+  document.getElementById('clearBtn').addEventListener('click', () => { input.value = ''; renderSearchResults(); input.focus(); });
+
+/* =============================================
+   FAVORITES
+   ============================================= */
+  const favGrid  = document.getElementById('favoritesGrid');
+  const emptyFavs = document.getElementById('emptyFavorites');
+  const getKey   = c => c.dataset.key;
+
+  function loadFavs()     { try { const p = JSON.parse(localStorage.getItem(FAV_KEY) || '[]'); return Array.isArray(p) ? p : []; } catch { return []; } }
+  function saveFavs(arr)  { localStorage.setItem(FAV_KEY, JSON.stringify(arr)); }
+  let favorites = loadFavs();
+
+  function setFavUI(card, isFav) {
+    const btn = card.querySelector('.fav-btn');
+    if (!btn) return;
+    btn.classList.toggle('is-favorite', isFav);
+    const star = btn.querySelector('span');
+    if (star) star.textContent = isFav ? '★' : '☆';
+    card.classList.toggle('is-favorite', isFav);
+  }
+
+  function renderFavs() {
+    favGrid.innerHTML = '';
+    const favCards = cards.filter(c => favorites.includes(getKey(c)));
+    if (emptyFavs) emptyFavs.style.display = favCards.length ? 'none' : 'block';
+
+    favCards.forEach(card => {
+      const key = getKey(card);
+      const clone = document.createElement('article');
+      clone.className = 'card favorite-card';
+      clone.dataset.key = key;
+      clone.innerHTML = `
+        <img class="favorite-thumb" src="${resolveAssetUrl(card.dataset.image || '')}" alt="${card.querySelector('.title')?.textContent || ''}" loading="lazy" />
+        <h3 class="title">${card.querySelector('.title').textContent}</h3>
+        <div class="free">Бесплатный пак</div>
+        ${(() => { const s = card.dataset.size || PACK_SIZES[key] || ''; return s ? `<div class="pack-size">${s}</div>` : ''; })()}
+        <div class="dl-counter"><span class="dl-counter-icon">↓</span><span class="dl-counter-num">${getCount(key,'dl')}</span>&nbsp;скачиваний</div>
+        <div class="favorite-actions">
+          <a class="btn dl-btn" href="${card.dataset.download}" target="_blank" rel="noopener">Скачать</a>
+          <button class="remove-fav" type="button">Убрать</button>
+        </div>`;
+      clone.querySelector('.dl-btn').addEventListener('click', () => dlIncrement(key));
+      clone.querySelector('.remove-fav').addEventListener('click', () => toggleFav(key, card, true));
+      favGrid.appendChild(clone);
+      applyAuthToContainer(clone);
+    });
+  }
+
+  function toggleFav(key, card, forceRemove = false) {
+    const was = favorites.includes(key);
+    const now = forceRemove ? false : !was;
+    favorites = now ? Array.from(new Set([...favorites, key])) : favorites.filter(k => k !== key);
+    saveFavs(favorites);
+    setFavUI(card, now);
+    card.classList.remove('fav-pulse'); void card.offsetWidth; card.classList.add('fav-pulse');
+    setTimeout(() => card.classList.remove('fav-pulse'), 520);
+    cards.forEach(c => setFavUI(c, favorites.includes(getKey(c))));
+    renderFavs();
+    syncRecommendations();
+    renderSearchResults();
+  }
+
+/* =============================================
+   LIKES (Firebase-backed per-user, localStorage fallback)
+   ============================================= */
+  function loadLiked()    { try { const p = JSON.parse(localStorage.getItem(LIKE_KEY) || '[]'); return Array.isArray(p) ? p : []; } catch { return []; } }
+  function saveLiked(arr) {
+    localStorage.setItem(LIKE_KEY, JSON.stringify(arr));
+    // Save to Firebase if user is logged in
+    if (_currentUser) {
+      fbDb.ref(`users/${_currentUser.uid}/liked`).set(arr).catch(e => console.warn('saveLiked firebase error', e));
+    }
+  }
+  let liked = loadLiked();
+
+  async function loadLikedFromFirebase(uid) {
+    try {
+      const snap = await fbDb.ref(`users/${uid}/liked`).get();
+      const data = snap.val();
+      if (Array.isArray(data) && data.length > 0) {
+        liked = Array.from(new Set([...(liked || []), ...data]));
+        localStorage.setItem(LIKE_KEY, JSON.stringify(liked));
+      }
+    } catch(e) { console.warn('loadLikedFromFirebase error', e); }
+    // Refresh UI after loading
+    cards.forEach(c => setLikeUI(c, liked.includes(getKey(c))));
+  }
+
+  function setLikeUI(card, isLiked) {
+    const btn = card.querySelector('.like-btn');
+    if (!btn) return;
+    btn.classList.toggle('liked', isLiked);
+    btn.setAttribute('aria-pressed', String(!!isLiked));
+  }
+
+  function syncLikeButtons(key) {
+    const likedNow = liked.includes(key);
+    document.querySelectorAll(`[data-key="${CSS.escape(key)}"] .like-btn`).forEach(btn => {
+      btn.classList.toggle('liked', likedNow);
+      btn.setAttribute('aria-pressed', String(likedNow));
+    });
+  }
+
+  async function toggleLike(key) {
+    const wasLiked = liked.includes(key);
+    liked = wasLiked ? liked.filter(k => k !== key) : Array.from(new Set([...liked, key]));
+    saveLiked(liked);
+
+    syncLikeButtons(key);
+    document.querySelectorAll(`[data-key="${CSS.escape(key)}"] .like-btn`).forEach(btn => {
+      btn.classList.add('like-bump');
+      setTimeout(() => btn.classList.remove('like-bump'), 420);
+    });
+
+    if (wasLiked) await likeDecrement(key);
+    else await likeIncrement(key);
+  }
+
+/* =============================================
+   MODAL
+   ============================================= */
+  const overlay  = document.getElementById('modalOverlay');
+  const mClose   = document.getElementById('modalClose');
+  const mBanner  = document.getElementById('modalBanner');
+  const mTitle   = document.getElementById('modalTitle');
+  const mPlugins = document.getElementById('modalPlugins');
+  const mSize    = document.getElementById('modalSize');
+  const mTags    = document.getElementById('modalTags');
+  const mDesc    = document.getElementById('modalDesc');
+  const mDescLbl = document.getElementById('modalDescLabel');
+  const mDlBtn   = document.getElementById('modalDlBtn');
+
+  function openModal(card) {
+    const key     = getKey(card);
+    const plugins = (card.dataset.plugins || '').split(',').map(s => s.trim()).filter(Boolean);
+    const items   = (card.dataset.items   || '').split(',').map(s => s.trim()).filter(Boolean);
+    const desc    = card.dataset.desc  || '';
+    const image   = card.dataset.image || '';
+
+    if (image) { mBanner.src = resolveAssetUrl(image); mBanner.alt = card.querySelector('.title')?.textContent || ''; mBanner.style.display = 'block'; }
+    else { mBanner.style.display = 'none'; mBanner.removeAttribute('src'); }
+
+    mTitle.textContent = card.querySelector('.title').textContent;
+    if (plugins.length) { mPlugins.textContent = 'Плагины: ' + plugins.join(', '); mPlugins.style.display = ''; }
+    else { mPlugins.textContent = ''; mPlugins.style.display = 'none'; }
+
+    const modalSize = card.dataset.size || PACK_SIZES[key] || '';
+    mSize.textContent = modalSize;
+    mSize.style.display = modalSize ? '' : 'none';
+    mTags.innerHTML = items.map(i => `<span class="modal-tag">${i}</span>`).join('');
+    if (desc) { mDesc.textContent = desc; mDescLbl.style.display = ''; }
+    else { mDesc.textContent = ''; mDescLbl.style.display = 'none'; }
+    mDlBtn.href = card.dataset.download || '#';
+    applyDownloadState(mDlBtn, _canDownload);
+
+    overlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeModal() {
+    overlay.style.opacity = '0';
+    setTimeout(() => {
+      overlay.classList.remove('open');
+      overlay.style.opacity = '';
+      document.body.style.overflow = '';
+      mBanner.removeAttribute('src');
+      mBanner.alt = '';
+    }, 240);
+  }
+
+  mClose.addEventListener('click', closeModal);
+  overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(); });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { closeModal(); closeAuthModal(); }
+  });
+
+/* =============================================
+   WIRE UP ALL PACK CARDS
+   ============================================= */
+  cards.forEach(card => {
+    const key = getKey(card);
+    card.querySelector('.fav-btn')?.addEventListener('click', e => { e.stopPropagation(); toggleFav(key, card); });
+    card.querySelector('.dl-btn')?.addEventListener('click', () => dlIncrement(key));
+    card.querySelector('.like-btn')?.addEventListener('click', e => { e.stopPropagation(); toggleLike(key); });
+    card.querySelector('.about-btn')?.addEventListener('click', () => openModal(card));
+  });
+
+  // Initial render
+  applyPackSizes();
+  initAllCounters();
+  updateCardVisibility(true);
+  cards.forEach(c => { setFavUI(c, favorites.includes(getKey(c))); setLikeUI(c, liked.includes(getKey(c))); });
+  updateAllDownloadButtons(false); // locked until auth resolves
+  renderFavs();
+  renderSearchResults();
+  syncRecommendations();
+
+  // Start Firebase counter subscription
+  subscribeToCounters();
+</script>
+
+<script>
+/* =============================================
+   PAGE NAVIGATION
+   ============================================= */
+  const PAGE_IDS = ['homePage', 'versionsPage', 'pluginsPage', 'packsPage'];
+  function setNavActive(activeId) {
+    const map = { homePage: 'navHome', packsPage: 'navPacks', pluginsPage: 'navPlugins' };
+    Object.entries(map).forEach(([pageId, btnId]) => {
+      const btn = document.getElementById(btnId);
+      if (btn) btn.classList.toggle('active', pageId === activeId);
+    });
+  }
+  function showPage(pageId) {
+    PAGE_IDS.forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.classList.toggle('page-hidden', id !== pageId);
+    });
+    setNavActive(pageId);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (pageId === 'packsPage') document.getElementById('searchInput')?.focus({ preventScroll: true });
+    if (pageId === 'pluginsPage') document.getElementById('pluginSearchInput')?.focus({ preventScroll: true });
+    if (pageId === 'homePage') history.replaceState(null, '', '#home');
+    else if (pageId === 'packsPage') history.replaceState(null, '', '#packs');
+    else if (pageId === 'pluginsPage') history.replaceState(null, '', '#plugins');
+    else if (pageId === 'versionsPage') history.replaceState(null, '', '#versions');
+  }
+  function initPageFromHash() {
+    const hash = (location.hash || '#home').replace('#', '').toLowerCase();
+    if (hash === 'versions') return showPage('versionsPage');
+    if (hash === 'plugins')  return showPage('pluginsPage');
+    if (hash === 'packs')    return showPage('packsPage');
+    return showPage('homePage');
+  }
+  window.addEventListener('hashchange', initPageFromHash);
+  initPageFromHash();
+</script>
+
+<!-- Auth UI Logic -->
+<script>
+  let currentTab = 'login';
+
+  function openAuthModal(tab) {
+    switchTab(tab || 'login');
+    document.getElementById('authModalOverlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+    clearAuthMessages();
+  }
+  function closeAuthModal() {
+    document.getElementById('authModalOverlay').classList.remove('open');
+    document.body.style.overflow = '';
+    clearAuthMessages();
+  }
+  document.getElementById('authModalOverlay').addEventListener('click', e => {
+    if (e.target === document.getElementById('authModalOverlay')) closeAuthModal();
+  });
+
+  function switchTab(tab) {
+    currentTab = tab;
+    const isForgot = tab === 'forgot';
+    const isRegister = tab === 'register';
+
+    document.getElementById('authTabs').style.display = isForgot ? 'none' : '';
+    document.getElementById('tabLogin').classList.toggle('active', tab === 'login');
+    document.getElementById('tabRegister').classList.toggle('active', isRegister);
+
+    document.getElementById('authModalTitle').textContent =
+      isForgot ? 'Восстановление пароля' : 'Добро пожаловать';
+    document.getElementById('authModalSub').textContent =
+      isForgot ? 'Введи email — мы пришлём ссылку для сброса пароля' :
+      'Войди, чтобы скачивать паки и ставить лайки';
+
+    document.getElementById('authPasswordField').style.display = isForgot ? 'none' : '';
+    document.getElementById('authConfirmField').style.display = isRegister ? '' : 'none';
+
+    document.getElementById('authSubmitBtn').textContent =
+      isForgot ? 'Отправить письмо' : isRegister ? 'Зарегистрироваться' : 'Войти';
+    document.getElementById('authSubmitBtn').onclick =
+      isForgot ? handleForgotPassword : handleEmailAuth;
+
+    document.getElementById('forgotLink').style.display = tab === 'login' ? '' : 'none';
+    document.getElementById('authDivider').style.display = isForgot ? 'none' : '';
+    document.getElementById('authGoogleBtn').style.display = isForgot ? 'none' : '';
+
+    clearAuthMessages();
+    document.getElementById('authEmail').focus();
+  }
+
+  function showAuthError(msg) {
+    const el = document.getElementById('authError');
+    el.textContent = msg; el.classList.add('show');
+    document.getElementById('authSuccess').classList.remove('show');
+  }
+  function showAuthSuccess(msg) {
+    const el = document.getElementById('authSuccess');
+    el.textContent = msg; el.classList.add('show');
+    document.getElementById('authError').classList.remove('show');
+  }
+  function clearAuthMessages() {
+    document.getElementById('authError').classList.remove('show');
+    document.getElementById('authSuccess').classList.remove('show');
+  }
+
+  function getFirebaseErrorText(code) {
+    const map = {
+      'auth/invalid-email':          'Неверный формат email.',
+      'auth/user-not-found':         'Пользователь не найден.',
+      'auth/wrong-password':         'Неверный пароль.',
+      'auth/email-already-in-use':   'Этот email уже зарегистрирован.',
+      'auth/weak-password':          'Пароль слишком слабый — минимум 6 символов.',
+      'auth/invalid-credential':     'Неверный email или пароль.',
+      'auth/too-many-requests':      'Слишком много попыток. Попробуй позже.',
+      'auth/popup-closed-by-user':   'Окно авторизации закрыто.',
+      'auth/network-request-failed': 'Ошибка сети. Проверь подключение.',
+    };
+    return map[code] || `Ошибка: ${code}`;
+  }
+
+  async function handleEmailAuth() {
+    const email    = document.getElementById('authEmail').value.trim();
+    const password = document.getElementById('authPassword').value;
+    const confirm  = document.getElementById('authConfirm').value;
+    const btn      = document.getElementById('authSubmitBtn');
+
+    if (!email || !password) { showAuthError('Заполни все поля.'); return; }
+    if (currentTab === 'register' && password !== confirm) { showAuthError('Пароли не совпадают.'); return; }
+    if (currentTab === 'register' && password.length < 6)  { showAuthError('Пароль слишком короткий.'); return; }
+
+    btn.disabled = true;
+    btn.textContent = 'Загрузка...';
+    clearAuthMessages();
+
+    try {
+      const auth = window.firebaseAuth;
+      if (currentTab === 'login') {
+        const cred = await auth.signInEmail(email, password);
+        if (!cred.user.emailVerified) {
+          showAuthError('Сначала подтверди email. Проверь почту (и папку «Спам»).');
+          showVerifyBanner();
+          await auth.signOut();
+          return;
+        }
+        closeAuthModal();
+      } else {
+        await auth.registerEmail(email, password);
+        showAuthSuccess('Аккаунт создан! Письмо с подтверждением отправлено. Проверь папку «Спам». 📧');
+        showVerifyBanner();
+        setTimeout(() => { closeAuthModal(); auth.signOut(); }, 4000);
+      }
+    } catch (err) {
+      showAuthError(getFirebaseErrorText(err.code));
+    } finally {
+      btn.disabled = false;
+      btn.textContent = currentTab === 'login' ? 'Войти' : 'Зарегистрироваться';
+    }
+  }
+
+  async function handleForgotPassword() {
+    const email = document.getElementById('authEmail').value.trim();
+    const btn   = document.getElementById('authSubmitBtn');
+    if (!email) { showAuthError('Введи email.'); return; }
+
+    btn.disabled = true;
+    btn.textContent = 'Отправка...';
+    clearAuthMessages();
+    try {
+      await window.firebaseAuth?.sendPasswordReset(email);
+      showAuthSuccess('Письмо отправлено! Проверь почту и папку «Спам». 📧');
+      setTimeout(() => switchTab('login'), 3000);
+    } catch (err) {
+      showAuthError(getFirebaseErrorText(err.code));
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Отправить письмо';
+    }
+  }
+
+  async function handleGoogleAuth() {
+    clearAuthMessages();
+    try {
+      await window.firebaseAuth?.signInGoogle();
+      closeAuthModal();
+    } catch (err) {
+      if (err.code !== 'auth/popup-closed-by-user') showAuthError(getFirebaseErrorText(err.code));
+    }
+  }
+
+  function showVerifyBanner() {
+    document.getElementById('verifyBanner').classList.add('show');
+  }
+  async function resendVerification() {
+    try {
+      await window.firebaseAuth?.sendVerification();
+      const btn = document.querySelector('.verify-resend-btn');
+      if (btn) { btn.textContent = 'Отправлено ✓'; btn.disabled = true; }
+    } catch(e) { console.error(e); }
+  }
+
+  /* ---- Auth Nav ---- */
+  function renderAuthNav(user) {
+    const nav = document.getElementById('authNav');
+    if (!user) {
+      nav.innerHTML = `<button class="auth-nav-btn primary" onclick="openAuthModal()">Войти</button>`;
+      updateAllDownloadButtons(false);
+      applyPluginAuthState();
+      return;
+    }
+    const verified = window.firebaseAuth?.isVerified();
+    const initials = (user.displayName || user.email || '?')[0].toUpperCase();
+    const avatarHtml = user.photoURL
+      ? `<img class="auth-avatar" src="${user.photoURL}" alt="avatar" />`
+      : `<div class="auth-avatar-placeholder">${initials}</div>`;
+    const displayName = user.displayName || user.email?.split('@')[0] || 'Пользователь';
+    const verifiedBadge = verified ? '' : ` <span style="font-size:10px;opacity:.6;color:#ffd54a">⚠ не подтверждён</span>`;
+
+    nav.innerHTML = `
+      <div class="auth-dropdown" id="authDropdown">
+        <button class="auth-nav-btn" onclick="toggleDropdown()" id="authUserBtn">
+          ${avatarHtml}
+          <span class="auth-user-name">${displayName}${verifiedBadge}</span>
+          <span style="opacity:.5;font-size:11px">▾</span>
+        </button>
+        <div class="auth-dropdown-menu" id="authDropdownMenu">
+          <div class="auth-dropdown-item" style="cursor:default;opacity:.5;font-size:12px">${user.email}</div>
+          ${!verified ? `<div class="auth-dropdown-item" style="color:#ffd54a" onclick="resendVerification()">📧 Подтвердить email</div>` : ''}
+          <div class="auth-dropdown-sep"></div>
+          <div class="auth-dropdown-item" onclick="handleSignOut()">🚪 Выйти</div>
+        </div>
+      </div>`;
+
+    updateAllDownloadButtons(verified);
+    applyPluginAuthState();
+    if (!verified) showVerifyBanner();
+  }
+
+  /* ---- Download gate ---- */
+  function updateAllDownloadButtons(canDownload) {
+    _canDownload = canDownload;
+    document.querySelectorAll('.dl-btn, .modal-dl-btn').forEach(btn => applyDownloadState(btn, canDownload));
+  }
+
+  function applyDownloadState(btn, canDownload) {
+    if (canDownload) {
+      const saved = btn.dataset.realHref;
+      if (saved) { btn.href = saved; delete btn.dataset.realHref; }
+      btn.removeAttribute('data-locked');
+      btn.style.opacity = '';
+      btn.title = '';
+      btn.onclick = null;
+    } else {
+      if (!btn.dataset.realHref && btn.href && btn.href !== '#' && btn.href !== window.location.href) {
+        btn.dataset.realHref = btn.href;
+      }
+      btn.href = '#';
+      btn.dataset.locked = '1';
+      btn.style.opacity = '0.5';
+      btn.title = 'Войди, чтобы скачать';
+      btn.onclick = (e) => { e.preventDefault(); openAuthModal('login'); };
+    }
+  }
+
+  function applyAuthToContainer(container) {
+    container.querySelectorAll('.dl-btn').forEach(btn => applyDownloadState(btn, _canDownload));
+  }
+
+  function toggleDropdown() {
+    document.getElementById('authDropdownMenu')?.classList.toggle('open');
+  }
+  document.addEventListener('click', e => {
+    const dd = document.getElementById('authDropdown');
+    if (dd && !dd.contains(e.target)) document.getElementById('authDropdownMenu')?.classList.remove('open');
+  });
+
+  async function handleSignOut() {
+    await window.firebaseAuth?.signOut();
+    document.getElementById('authDropdownMenu')?.classList.remove('open');
+    document.getElementById('verifyBanner').classList.remove('show');
+  }
+
+  window.onAuthChange = async (user) => {
+    _currentUser = user;
+    _canDownload = window.firebaseAuth?.isVerified() || false;
+    if (user) {
+      // Load liked packs and plugins from Firebase for this user
+      await loadLikedFromFirebase(user.uid);
+      await loadPluginLikedFromFirebase(user.uid);
+    } else {
+      // Keep local likes visible offline; only stop syncing to Firebase.
+      cards.forEach(c => setLikeUI(c, liked.includes(getKey(c))));
+      pluginCards.forEach(c => setPluginLikeUI(c, pluginLiked.includes(pluginGetKey(c))));
+    }
+    renderAuthNav(user);
+  };
+
+  ['authEmail','authPassword','authConfirm'].forEach(id => {
+    document.getElementById(id)?.addEventListener('keydown', e => {
+      if (e.key === 'Enter') currentTab === 'forgot' ? handleForgotPassword() : handleEmailAuth();
+    });
+  });
+
+  renderAuthNav(null); // initial state — locked until Firebase resolves
+</script>
+
+<script>
+/* =============================================
+   PLUGINS PAGE
+   ============================================= */
+  const pluginCards         = Array.from(document.querySelectorAll('#pluginCards .plugin-card'));
+  const pluginSearchInput   = document.getElementById('pluginSearchInput');
+  const pluginClearBtn      = document.getElementById('pluginClearBtn');
+  const pluginFavoritesGrid = document.getElementById('pluginFavoritesGrid');
+  const pluginEmptyFavorites = document.getElementById('pluginEmptyFavorites');
+  const pluginEmptyState    = document.getElementById('pluginEmptyState');
+  const pluginResultCount   = document.getElementById('pluginResultCount');
+  const PLUGIN_FAV_KEY      = 'ae_editor_plugin_favorites_v1';
+  const PLUGIN_LIKE_KEY     = 'ae_editor_plugin_liked_v1';
+
+  const pluginGetKey = c => c.dataset.key;
+  function loadPluginList(key) { try { const p = JSON.parse(localStorage.getItem(key) || '[]'); return Array.isArray(p) ? p : []; } catch { return []; } }
+  function savePluginList(key, arr) {
+    localStorage.setItem(key, JSON.stringify(arr));
+    // Sync plugin liked list to Firebase if user is logged in
+    if (key === PLUGIN_LIKE_KEY && _currentUser) {
+      fbDb.ref(`users/${_currentUser.uid}/pluginLiked`).set(arr).catch(e => console.warn('savePluginLiked firebase error', e));
+    }
+  }
+
+  async function loadPluginLikedFromFirebase(uid) {
+    try {
+      const snap = await fbDb.ref(`users/${uid}/pluginLiked`).get();
+      const data = snap.val();
+      if (Array.isArray(data) && data.length > 0) {
+        pluginLiked = Array.from(new Set([...(pluginLiked || []), ...data]));
+        localStorage.setItem(PLUGIN_LIKE_KEY, JSON.stringify(pluginLiked));
+      }
+    } catch(e) { console.warn('loadPluginLikedFromFirebase error', e); }
+    // Refresh UI
+    pluginCards.forEach(c => setPluginLikeUI(c, pluginLiked.includes(pluginGetKey(c))));
+  }
+
+  let pluginFavorites = loadPluginList(PLUGIN_FAV_KEY);
+  let pluginLiked     = loadPluginList(PLUGIN_LIKE_KEY);
+
+  function setPluginFavUI(card, isFav) {
+    const btn = card.querySelector('.fav-btn');
+    if (!btn) return;
+    btn.classList.toggle('is-favorite', isFav);
+    const star = btn.querySelector('span');
+    if (star) star.textContent = isFav ? '★' : '☆';
+    card.classList.toggle('is-favorite', isFav);
+  }
+
+  function setPluginLikeUI(card, isLiked) {
+    const btn = card.querySelector('.like-btn');
+    if (!btn) return;
+    btn.classList.toggle('liked', isLiked);
+    btn.setAttribute('aria-pressed', String(!!isLiked));
+  }
+
+  function renderPluginFavs() {
+    if (!pluginFavoritesGrid) return;
+    pluginFavoritesGrid.innerHTML = '';
+    const favCards = pluginCards.filter(c => pluginFavorites.includes(pluginGetKey(c)));
+    if (pluginEmptyFavorites) pluginEmptyFavorites.style.display = favCards.length ? 'none' : 'block';
+
+    favCards.forEach(card => {
+      const key = pluginGetKey(card);
+      const clone = document.createElement('article');
+      clone.className = 'card favorite-card';
+      clone.dataset.key = key;
+      clone.innerHTML = `
+        <h3 class="title">${card.querySelector('.title')?.textContent || ''}</h3>
+        <div class="free">Плагин</div>
+        <div class="pack-size">${card.dataset.size || ''}</div>
+        <div class="dl-counter"><span class="dl-counter-icon">↓</span><span class="dl-counter-num">${getCount(key,'dl')}</span>&nbsp;скачиваний</div>
+        <div class="favorite-actions">
+          <a class="btn dl-btn" href="${card.dataset.download || '#'}" target="_blank" rel="noopener">Скачать</a>
+          <button class="remove-fav" type="button">Убрать</button>
+        </div>`;
+      clone.querySelector('.dl-btn')?.addEventListener('click', () => dlIncrement(key));
+      clone.querySelector('.remove-fav')?.addEventListener('click', () => togglePluginFav(key, card, true));
+      pluginFavoritesGrid.appendChild(clone);
+      applyDownloadState(clone.querySelector('.dl-btn'), _canDownload);
+    });
+  }
+
+  function togglePluginFav(key, card, forceRemove = false) {
+    const was = pluginFavorites.includes(key);
+    const now = forceRemove ? false : !was;
+    pluginFavorites = now ? Array.from(new Set([...pluginFavorites, key])) : pluginFavorites.filter(k => k !== key);
+    savePluginList(PLUGIN_FAV_KEY, pluginFavorites);
+    setPluginFavUI(card, now);
+    card.classList.remove('fav-pulse'); void card.offsetWidth; card.classList.add('fav-pulse');
+    setTimeout(() => card.classList.remove('fav-pulse'), 520);
+    pluginCards.forEach(c => setPluginFavUI(c, pluginFavorites.includes(pluginGetKey(c))));
+    renderPluginFavs();
+  }
+
+  async function togglePluginLike(key) {
+    const wasLiked = pluginLiked.includes(key);
+    pluginLiked = wasLiked ? pluginLiked.filter(k => k !== key) : Array.from(new Set([...pluginLiked, key]));
+    savePluginList(PLUGIN_LIKE_KEY, pluginLiked);
+
+    pluginCards.forEach(c => {
+      if (pluginGetKey(c) === key) {
+        setPluginLikeUI(c, !wasLiked);
+        const btn = c.querySelector('.like-btn');
+        btn?.classList.add('like-bump');
+        setTimeout(() => btn?.classList.remove('like-bump'), 420);
+      }
+    });
+
+    if (wasLiked) await likeDecrement(key);
+    else await likeIncrement(key);
+    renderPluginFavs();
+  }
+
+  function applyPluginAuthState() {
+    pluginCards.forEach(card => {
+      const dlBtn = card.querySelector('.dl-btn');
+      if (dlBtn) applyDownloadState(dlBtn, _canDownload);
+      setPluginFavUI(card, pluginFavorites.includes(pluginGetKey(card)));
+      setPluginLikeUI(card, pluginLiked.includes(pluginGetKey(card)));
+    });
+    document.querySelectorAll('#pluginFavoritesGrid .dl-btn').forEach(btn => applyDownloadState(btn, _canDownload));
+  }
+
+  function filterPluginCards() {
+    const q = (pluginSearchInput?.value || '').trim().toLowerCase();
+    let visible = 0;
+    pluginCards.forEach(card => {
+      const hay = (card.dataset.search || '').toLowerCase();
+      const ok = !q || hay.includes(q);
+      card.style.display = ok ? '' : 'none';
+      if (ok) visible++;
+    });
+    if (pluginResultCount) pluginResultCount.textContent = String(visible);
+    if (pluginEmptyState) pluginEmptyState.style.display = visible ? 'none' : 'block';
+  }
+
+  pluginSearchInput?.addEventListener('input', filterPluginCards);
+  pluginClearBtn?.addEventListener('click', () => { if (pluginSearchInput) pluginSearchInput.value = ''; filterPluginCards(); });
+
+  pluginCards.forEach(card => {
+    const key = pluginGetKey(card);
+    // Counters will be set by subscribeToCounters() via updateAllCounterDisplays
+    card.querySelector('.fav-btn')?.addEventListener('click', e => { e.stopPropagation(); togglePluginFav(key, card); });
+    card.querySelector('.like-btn')?.addEventListener('click', e => { e.stopPropagation(); togglePluginLike(key); });
+    card.querySelector('.about-btn')?.addEventListener('click', () => openModal(card));
+    card.querySelector('.dl-btn')?.addEventListener('click', () => dlIncrement(key));
+  });
+
+  applyPluginAuthState();
+  filterPluginCards();
+  renderPluginFavs();
+</script>
+
+
+<nav class="bottom-nav" aria-label="Основная навигация">
+  <button class="bottom-nav-btn active" id="navHome" type="button" onclick="showPage('homePage')">Главная</button>
+  <button class="bottom-nav-btn" id="navPacks" type="button" onclick="showPage('packsPage')">Паки</button>
+  <button class="bottom-nav-btn" id="navPlugins" type="button" onclick="showPage('pluginsPage')">Плагины</button>
+</nav>
+</body>
+</html>
